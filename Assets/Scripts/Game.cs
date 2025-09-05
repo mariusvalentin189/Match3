@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Game : MonoBehaviour
 {
@@ -8,19 +10,16 @@ public class Game : MonoBehaviour
     {
         Instance = this;
     }
-    [SerializeField] int gameTilesRowsCount = 2;
-    [SerializeField] Tile[] gameTiles;
+    [SerializeField] int gameTilesRowsCount;
+    [SerializeField] GameObject[] gameObjects;
+    [SerializeField] Color selectedTileColor;
+    [SerializeField] Color deselectedTileColor;
+    Tile[] gameTiles;
     Tile selectedTile;
     void Start()
     {
         gameTiles = GetComponentsInChildren<Tile>();
         SetTilesGameIndex();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     void SetTilesGameIndex()
@@ -33,7 +32,8 @@ public class Game : MonoBehaviour
             int i = 0;
             for (i = currentIndex; i < rowLength * (currentRow + 1); i++)
             {
-                gameTiles[i].SetIndex(currentRow, i - currentIndex);
+                int randomGameObjectIndex = UnityEngine.Random.Range(0, gameObjects.Length);
+                gameTiles[i].SetIndex(currentRow, i - currentIndex, gameObjects[randomGameObjectIndex]);
             }
             currentIndex = i;
             currentRow += 1;
@@ -44,30 +44,41 @@ public class Game : MonoBehaviour
     {
         if (selectedTile == null)
         {
+            tile.GetComponent<Image>().color = selectedTileColor;
             selectedTile = tile;
         }
         else
         {
-            //Swap tiles
             //TODO: Check if a match can be made and cancel the swap if not possible
-            int t = selectedTile.GetTileObjectId();
-            selectedTile.SetTileObjectId(tile.GetTileObjectId());
-            tile.SetTileObjectId(t);
 
-            //Swap Images
-            GameObject firstImage = selectedTile.GetTileImage();
-            GameObject secondImage = tile.GetTileImage();
+            int[] idxTileSelected = selectedTile.GetIndexes();
+            int[] idxTileCurrent = tile.GetIndexes();
 
-            firstImage.transform.SetParent(tile.transform);
-            firstImage.transform.localPosition = new Vector2(0, 0);
+            //Check if beside the current tile (up,down,left,right)
+            if (idxTileCurrent[0] == idxTileSelected[0] || idxTileCurrent[1] == idxTileSelected[1])
+            {
+                //Swap Tiles
+                GameObject firstImage = selectedTile.GetTileObject();
+                GameObject secondImage = tile.GetTileObject();
 
-            secondImage.transform.SetParent(selectedTile.transform);
-            secondImage.transform.localPosition = new Vector2(0, 0);
+                firstImage.transform.SetParent(tile.transform);
+                firstImage.transform.localPosition = new Vector2(0, 0);
 
-            selectedTile.InitializeTileImage();
-            tile.InitializeTileImage();
+                secondImage.transform.SetParent(selectedTile.transform);
+                secondImage.transform.localPosition = new Vector2(0, 0);
 
-            selectedTile = null;
+                selectedTile.InitializeTileImage();
+                tile.InitializeTileImage();
+
+                selectedTile.GetComponent<Image>().color = deselectedTileColor;
+                selectedTile = null;
+            }
+            else
+            {
+                //Cancel Selection
+                selectedTile.GetComponent<Image>().color = deselectedTileColor;
+                selectedTile = null;
+            }
         }
     }
 }
