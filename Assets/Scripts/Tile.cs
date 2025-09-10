@@ -6,8 +6,12 @@ using UnityEngine.UIElements;
 public class Tile : MonoBehaviour, IPointerDownHandler
 {
     TileObject tileObject;
-    int gameRowIndex;
-    int gameColumnIndex;
+    int rowIndex;
+    int columnIndex;
+    Tile leftTile;
+    Tile rightTile;
+    Tile upTile;
+    Tile downTile;
     void Start()
     {
         tileObject = GetComponentInChildren<TileObject>();
@@ -27,18 +31,25 @@ public class Tile : MonoBehaviour, IPointerDownHandler
     public int[] GetIndexes()
     {
         int[] r = new int[2];
-        r[0] = gameRowIndex;
-        r[1] = gameColumnIndex;
+        r[0] = rowIndex;
+        r[1] = columnIndex;
         return r;
     }
     public void SetIndex(int rowValue, int columnValue, GameObject tileObj)
     {
-        gameRowIndex = rowValue;
-        gameColumnIndex = columnValue;
+        rowIndex = rowValue;
+        columnIndex = columnValue;
         GameObject t = Instantiate<GameObject>(tileObj);
         tileObject = t.GetComponent<TileObject>();
         tileObject.transform.SetParent(this.transform);
         tileObject.transform.localPosition = new Vector2(0, 0);
+    }
+    public void SetNeighbourTiles(Tile left, Tile right, Tile up, Tile down)
+    {
+        leftTile = left;
+        rightTile = right;
+        upTile = up;
+        downTile = down;
     }
 
     public void OnPointerDown(PointerEventData eventData)

@@ -11,6 +11,7 @@ public class Game : MonoBehaviour
         Instance = this;
     }
     [SerializeField] int gameTilesRowsCount;
+    [SerializeField] int rowLength;
     [SerializeField] GameObject[] gameObjects;
     [SerializeField] Color selectedTileColor;
     [SerializeField] Color deselectedTileColor;
@@ -26,7 +27,6 @@ public class Game : MonoBehaviour
     {
         int currentIndex = 0;
         int currentRow = 0;
-        int rowLength = gameTiles.Length / gameTilesRowsCount;
         while (currentIndex < gameTiles.Length)
         {
             int i = 0;
@@ -37,6 +37,11 @@ public class Game : MonoBehaviour
             }
             currentIndex = i;
             currentRow += 1;
+        }
+
+        for (int i = 0; i < gameTiles.Length; i++)
+        {
+            SetNeighbourTiles(i);
         }
     }
 
@@ -80,5 +85,76 @@ public class Game : MonoBehaviour
                 selectedTile = null;
             }
         }
+    }
+    void SetNeighbourTiles(int index)
+    {
+        Tile leftTile = null;
+        Tile rightTile = null;
+        Tile upTile = null;
+        Tile downTile = null;
+        if (index + 1 == gameTiles.Length)
+        {
+            rightTile = gameTiles[index - 1];
+            downTile = gameTiles[index - rowLength];
+        }
+        else if (index == 0)
+        {
+            leftTile = gameTiles[index + 1];
+            upTile = gameTiles[index + rowLength];
+        }
+        //Edges
+        else
+        {
+            int[] tileGameIndexes = gameTiles[index].GetIndexes();
+            //Right upper corner
+            if (tileGameIndexes[0] == gameTilesRowsCount - 1 && tileGameIndexes[1] == 0)
+            {
+                leftTile = gameTiles[index + 1];
+                downTile = gameTiles[index - rowLength];
+            }
+            //Left Lower Corner
+            else if (tileGameIndexes[0] == 0 && tileGameIndexes[1] == rowLength - 1)
+            {
+                rightTile = gameTiles[index - 1];
+                upTile = gameTiles[index + rowLength];
+            }
+            //Right Edge
+            else if (tileGameIndexes[1] == 0)
+            {
+                leftTile = gameTiles[index + 1];
+                upTile = gameTiles[index + rowLength];
+                downTile = gameTiles[index - rowLength];
+            }
+            //Left Edge
+            else if (tileGameIndexes[1] == rowLength - 1)
+            {
+                rightTile = gameTiles[index - 1];
+                upTile = gameTiles[index + rowLength];
+                downTile = gameTiles[index - rowLength];
+            }
+            //lower Edge
+            else if (tileGameIndexes[0] == 0)
+            {
+                upTile = gameTiles[index + rowLength];
+                leftTile = gameTiles[index + 1];
+                rightTile = gameTiles[index - 1];
+            }
+            //upper Edge
+            else if (tileGameIndexes[0] == gameTilesRowsCount - 1)
+            {
+                downTile = gameTiles[index - rowLength];
+                leftTile = gameTiles[index + 1];
+                rightTile = gameTiles[index - 1];
+            }
+            //middle area
+            else
+            {
+                upTile = gameTiles[index + rowLength];
+                downTile = gameTiles[index - rowLength];
+                leftTile = gameTiles[index + 1];
+                rightTile = gameTiles[index - 1];
+            }
+        }
+            gameTiles[index].SetNeighbourTiles(leftTile, rightTile, upTile, downTile);
     }
 }
