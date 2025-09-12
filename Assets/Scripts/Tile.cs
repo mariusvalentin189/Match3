@@ -60,4 +60,13 @@ public class Tile : MonoBehaviour, IPointerDownHandler
     {
         tileObject = transform.GetChild(0).gameObject.GetComponent<TileObject>();
     }
+    public Tile[] GetNeighbouringTiles()
+    {
+        Tile[] tiles = new Tile[4];
+        tiles[0] = upTile;
+        tiles[1] = downTile;
+        tiles[2] = leftTile;
+        tiles[3] = rightTile;
+        return tiles;
+    }
 }
