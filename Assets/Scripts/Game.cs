@@ -51,14 +51,28 @@ public class Game : MonoBehaviour
 
     public void SelectTile(Tile tile)
     {
+        //Temp
+        if (tile.GetTileObject() == null)
+        {
+            //Unselect if previously selected
+            if (selectedTile)
+            {
+                selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
+                selectedTile = null;
+            }
+            return;
+        }
+
         if (selectedTile == null)
         {
+            //Select first tile
             tile.GetComponent<UnityEngine.UI.Image>().color = selectedTileColor;
             selectedTile = tile;
         }
         else
         {
-            if (CheckMatchingTilesRow(selectedTile, tile) >= 2)
+            //Select second tile
+            if (CheckMatchingTilesRow(selectedTile, tile) >= 2 || CheckMatchingTilesColumn(selectedTile, tile) >= 2)
             {
                 //Check if a match can be made and cancel the swap if not possible
                 int[] idxTileSelected = selectedTile.GetIndexes();
@@ -220,6 +234,12 @@ public class Game : MonoBehaviour
                         }
                 }
             }
+            //If only one match is found do not include it
+            if (matches == 1)
+            {
+                matches = 0;
+                matchedTiles = new List<Tile>();
+            }
             //Check down column if moving from up
             if (swappingTile == swappedTileNeighbouringTiles[0])
             {
@@ -227,18 +247,18 @@ public class Game : MonoBehaviour
                 {
                     if (swappedTileNeighbouringTiles[1].GetTileObjectId() == swappingTileId)
                     {
-                        matches++;
-                        matchedTiles.Add(swappedTileNeighbouringTiles[1]);
                         Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[1].GetNeighbouringTiles();
                         if (swappedTileNeighbouringTile1[1])
                             if (swappedTileNeighbouringTile1[1].GetTileObjectId() == swappingTileId)
                             {
-                                matches++;
+                                //Only of two matches are found, include them
+                                matches+=2;
+                                matchedTiles.Add(swappedTileNeighbouringTiles[1]);
                                 matchedTiles.Add(swappedTileNeighbouringTile1[1]);
-
                             }
                     }
                 }
+
             }
             //Check up column when moving from down
             else if (swappingTile == swappedTileNeighbouringTiles[1])
@@ -247,13 +267,13 @@ public class Game : MonoBehaviour
                 {
                     if (swappedTileNeighbouringTiles[0].GetTileObjectId() == swappingTileId)
                     {
-                        matches++;  
-                        matchedTiles.Add(swappedTileNeighbouringTiles[0]);
                         Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[0].GetNeighbouringTiles();
                         if (swappedTileNeighbouringTile1[0])
                             if (swappedTileNeighbouringTile1[0].GetTileObjectId() == swappingTileId)
                             {
-                                matches++;
+                                //Only of two matches are found, include them
+                                matches += 2;
+                                matchedTiles.Add(swappedTileNeighbouringTiles[0]);
                                 matchedTiles.Add(swappedTileNeighbouringTile1[0]);
                             }
                     }
@@ -275,10 +295,14 @@ public class Game : MonoBehaviour
                 if (swappedTileNeighbouringTiles[0].GetTileObjectId() == swappingTileId)
                 {
                     matches++;
+                    matchedTiles.Add(swappedTileNeighbouringTiles[0]);
                     Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[0].GetNeighbouringTiles();
                     if (swappedTileNeighbouringTile1[0])
                         if (swappedTileNeighbouringTile1[0].GetTileObjectId() == swappingTileId)
+                        {
                             matches++;
+                            matchedTiles.Add(swappedTileNeighbouringTile1[0]);
+                        }
                 }
             }
             //Check column down
@@ -287,11 +311,21 @@ public class Game : MonoBehaviour
                 if (swappedTileNeighbouringTiles[1].GetTileObjectId() == swappingTileId)
                 {
                     matches++;
+                    matchedTiles.Add(swappedTileNeighbouringTiles[1]);
                     Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[1].GetNeighbouringTiles();
                     if (swappedTileNeighbouringTile1[1])
                         if (swappedTileNeighbouringTile1[1].GetTileObjectId() == swappingTileId)
+                        {
+                            matchedTiles.Add(swappedTileNeighbouringTile1[1]);
                             matches++;
+                        }
                 }
+            }
+            //If only one match is found do not include it
+            if (matches == 1)
+            {
+                matches = 0;
+                matchedTiles = new List<Tile>();
             }
             //Check right when moving from left
             if (swappingTile == swappedTileNeighbouringTiles[2])
@@ -299,12 +333,16 @@ public class Game : MonoBehaviour
                 if (swappedTileNeighbouringTiles[3])
                 {
                     if (swappedTileNeighbouringTiles[3].GetTileObjectId() == swappingTileId)
-                    {
-                        matches++;
+                    {  
                         Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[3].GetNeighbouringTiles();
                         if (swappedTileNeighbouringTile1[3])
                             if (swappedTileNeighbouringTile1[3].GetTileObjectId() == swappingTileId)
-                                matches++;
+                            {
+                                //Only of two matches are found, include them
+                                matches += 2;
+                                matchedTiles.Add(swappedTileNeighbouringTiles[3]);
+                                matchedTiles.Add(swappedTileNeighbouringTile1[3]);
+                            }
                     }
                 }
             }
@@ -315,11 +353,15 @@ public class Game : MonoBehaviour
                 {
                     if (swappedTileNeighbouringTiles[2].GetTileObjectId() == swappingTileId)
                     {
-                        matches++;
                         Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[2].GetNeighbouringTiles();
                         if (swappedTileNeighbouringTile1[2])
                             if (swappedTileNeighbouringTile1[2].GetTileObjectId() == swappingTileId)
-                                matches++;
+                            {
+                                //Only of two matches are found, include them
+                                matches += 2;
+                                matchedTiles.Add(swappedTileNeighbouringTiles[2]);
+                                matchedTiles.Add(swappedTileNeighbouringTile1[2]);
+                            }
                     }
                 }
             }

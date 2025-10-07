@@ -18,7 +18,7 @@ public class Tile : MonoBehaviour, IPointerDownHandler
     }
     public GameObject GetTileObject()
     {
-        return tileObject.gameObject;
+        return tileObject ? tileObject.gameObject : null;
     }
     public int GetTileObjectId()
     {
