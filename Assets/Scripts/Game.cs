@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -21,6 +22,8 @@ public class Game : MonoBehaviour
     List<Tile> matchedTiles = new List<Tile>();
     Tile[] gameTiles;
     Tile selectedTile;
+    Tile secondTile;
+    bool canMove = true;
     void Start()
     {
         gameTiles = GetComponentsInChildren<Tile>();
@@ -51,6 +54,7 @@ public class Game : MonoBehaviour
 
     public void SelectTile(Tile tile)
     {
+        if (!canMove) return;
         //Temp
         if (tile.GetTileObject() == null)
         {
@@ -72,48 +76,28 @@ public class Game : MonoBehaviour
         else
         {
             //Select second tile
-            if (CheckMatchingTilesRow(selectedTile, tile) >= 2 || CheckMatchingTilesColumn(selectedTile, tile) >= 2)
+            secondTile = tile;
+            if (CheckMatchingTilesRow(selectedTile, secondTile) >= 2 || CheckMatchingTilesColumn(selectedTile, secondTile) >= 2)
             {
                 //Check if a match can be made and cancel the swap if not possible
                 int[] idxTileSelected = selectedTile.GetIndexes();
-                int[] idxTileCurrent = tile.GetIndexes();
+                int[] idxTileCurrent = secondTile.GetIndexes();
 
                 //Check if beside the current tile (up,down,left,right)
                 if (idxTileCurrent[0] == idxTileSelected[0] || idxTileCurrent[1] == idxTileSelected[1])
                 {
-                    //Swap Tiles
-                    GameObject firstImage = selectedTile.GetTileObject();
-                    GameObject secondImage = tile.GetTileObject();
 
-                    firstImage.transform.SetParent(tile.transform);
-                    firstImage.transform.localPosition = new Vector2(0, 0);
-
-                    secondImage.transform.SetParent(selectedTile.transform);
-                    secondImage.transform.localPosition = new Vector2(0, 0);
-
-                    selectedTile.InitializeTileImage();
-                    tile.InitializeTileImage();
-
-                    selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
-
-                    if(matchedTiles.Count() >= 2)
-                    {
-                        foreach(Tile gameTile in matchedTiles)
-                        {
-                            Destroy(gameTile.GetTileObject());
-                            gameTile.InitializeTileImage();
-                        }
-                        matchedTiles = new List<Tile>();
-                        Destroy(tile.GetTileObject());
-                        tile.InitializeTileImage();
-                    }
-                    selectedTile = null;
+                    int[] directions = GetTilesDirection(idxTileCurrent, idxTileSelected);
+                    selectedTile.PlaySwapAnimation(directions[1]);
+                    secondTile.PlaySwapAnimation(directions[0]);
+                    StartCoroutine(MovePieces());
                 }
                 else
                 {
                     //Cancel Selection
                     selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
                     selectedTile = null;
+                    secondTile = null;
                 }
             }
             else
@@ -194,6 +178,41 @@ public class Game : MonoBehaviour
             }
         }
         gameTiles[index].SetNeighbourTiles(leftTile, rightTile, upTile, downTile);
+    }
+    
+    int[] GetTilesDirection(int[] firstTileIndexes, int[] secondTileIndexes)
+    {
+        int[] directions = new int[2];
+        //Is on the same row
+        // 0 - left, 1- right, 2-up, 3- down
+        if (firstTileIndexes[0] == secondTileIndexes[0])
+        {
+            if (firstTileIndexes[1] < secondTileIndexes[1])
+            {
+                directions[0] = 0;
+                directions[1] = 1;
+            }
+            else
+            {
+                directions[0] = 1;
+                directions[1] = 0;
+            }
+        }
+        //Same column
+        else if (firstTileIndexes[1] == secondTileIndexes[1])
+        {
+            if (firstTileIndexes[0] < secondTileIndexes[0])
+            {
+                directions[0] = 2;
+                directions[1] = 3;
+            }
+            else
+            {
+                directions[0] = 3;
+                directions[1] = 2;
+            }
+        }
+        return directions;
     }
     int CheckMatchingTilesRow(Tile swappingTile, Tile swappedTile)
     {
@@ -367,5 +386,41 @@ public class Game : MonoBehaviour
             }
         }
         return matches;
+    }
+
+    IEnumerator MovePieces()
+    {
+        canMove = false;
+        yield return new WaitForSeconds(0.3f);
+        //Swap Tiles
+        GameObject firstImage = selectedTile.GetTileObject();
+        GameObject secondImage = secondTile.GetTileObject();
+
+        firstImage.transform.SetParent(secondTile.transform);
+        firstImage.transform.localPosition = new Vector2(0, 0);
+
+        secondImage.transform.SetParent(selectedTile.transform);
+        secondImage.transform.localPosition = new Vector2(0, 0);
+
+        selectedTile.InitializeTileImage();
+        secondTile.InitializeTileImage();
+
+        selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
+
+        if (matchedTiles.Count() >= 2)
+        {
+            foreach (Tile gameTile in matchedTiles)
+            {
+                Destroy(gameTile.GetTileObject());
+                gameTile.InitializeTileImage();
+            }
+            matchedTiles = new List<Tile>();
+            Destroy(secondTile.GetTileObject());
+            secondTile.InitializeTileImage();
+        }
+        selectedTile = null;
+        secondTile = null;
+        canMove = true;
+
     }
 }

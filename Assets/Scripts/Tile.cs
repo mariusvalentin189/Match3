@@ -59,6 +59,7 @@ public class Tile : MonoBehaviour, IPointerDownHandler
     public void InitializeTileImage()
     {
         tileObject = transform.GetChild(0).gameObject.GetComponent<TileObject>();
+        tileObject.ResetAnimationState();
     }
     public Tile[] GetNeighbouringTiles()
     {
@@ -68,5 +69,9 @@ public class Tile : MonoBehaviour, IPointerDownHandler
         tiles[2] = leftTile;
         tiles[3] = rightTile;
         return tiles;
+    }
+    public void PlaySwapAnimation(int direction)
+    {
+        tileObject.PlayMoveAnimation(direction);
     }
 }
