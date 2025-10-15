@@ -19,11 +19,12 @@ public class Game : MonoBehaviour
     [SerializeField] GameObject[] gameObjects;
     [SerializeField] Color selectedTileColor;
     [SerializeField] Color deselectedTileColor;
-    List<Tile> matchedTiles = new List<Tile>();
     Tile[] gameTiles;
     Tile selectedTile;
     Tile secondTile;
     bool canMove = true;
+    List<Tile> firstMatchSwap = new List<Tile>();
+    List<Tile> secondMatchSwap = new List<Tile>();
     void Start()
     {
         gameTiles = GetComponentsInChildren<Tile>();
@@ -55,7 +56,8 @@ public class Game : MonoBehaviour
     public void SelectTile(Tile tile)
     {
         if (!canMove) return;
-        //Temp
+
+        //Temp (No tiles falling after matching for now)
         if (tile.GetTileObject() == null)
         {
             //Unselect if previously selected
@@ -77,19 +79,60 @@ public class Game : MonoBehaviour
         {
             //Select second tile
             secondTile = tile;
-            if (CheckMatchingTilesRow(selectedTile, secondTile) >= 2 || CheckMatchingTilesColumn(selectedTile, secondTile) >= 2)
-            {
-                //Check if a match can be made and cancel the swap if not possible
-                int[] idxTileSelected = selectedTile.GetIndexes();
-                int[] idxTileCurrent = secondTile.GetIndexes();
 
-                //Check if beside the current tile (up,down,left,right)
-                if (idxTileCurrent[0] == idxTileSelected[0] || idxTileCurrent[1] == idxTileSelected[1])
+            //Check if a match can be made and cancel the swap if not possible
+            int[] idxTileSelected = selectedTile.GetIndexes();
+            int[] idxTileCurrent = secondTile.GetIndexes();
+
+            //Check if beside the current tile (up,down,left,right)
+            if (idxTileCurrent[0] == idxTileSelected[0] || idxTileCurrent[1] == idxTileSelected[1])
+            {
+
+                //Check if the first selected tile is the one to make the match
+                firstMatchSwap = CheckMatchingTilesRow(selectedTile, secondTile);
+                if (firstMatchSwap.Count() >= 2)
+                {
+                    firstMatchSwap.Add(secondTile);
+                }
+                else
+                {
+                    firstMatchSwap = CheckMatchingTilesColumn(selectedTile, secondTile);
+                    if (firstMatchSwap.Count() >= 2)
+                    {
+                        firstMatchSwap.Add(secondTile);
+                    }
+                }
+
+                //Check if the second selected tile is the one to make the match
+                secondMatchSwap = CheckMatchingTilesRow(secondTile, selectedTile);
+                if (secondMatchSwap.Count() >= 2)
+                {
+                    secondMatchSwap.Add(selectedTile);
+                }
+                else
+                {
+                    secondMatchSwap = CheckMatchingTilesColumn(secondTile, selectedTile);
+                    if (secondMatchSwap.Count() >= 2)
+                    {
+                        secondMatchSwap.Add(selectedTile);
+                    }
+                }
+                //Check the matches for either the fist or second selected tile (including the selected tiles) is at least 3
+                if (firstMatchSwap.Count() >= 3 || secondMatchSwap.Count() >= 3)
                 {
 
+                    //Get the direction the second tile is in relation to the first tile
+                    //Direction are represented by int numbers: 0 - left, 1- right, 2-up, 3- down
                     int[] directions = GetTilesDirection(idxTileCurrent, idxTileSelected);
+
+                    //Deselect the selected tile
+                    selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
+
+                    //Play swap animation based on the direction
                     selectedTile.PlaySwapAnimation(directions[1]);
                     secondTile.PlaySwapAnimation(directions[0]);
+
+                    //Start the Coroutine to handle destroying the mathed pieces
                     StartCoroutine(MovePieces());
                 }
                 else
@@ -100,11 +143,13 @@ public class Game : MonoBehaviour
                     secondTile = null;
                 }
             }
+
             else
             {
                 //Cancel Selection
                 selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
                 selectedTile = null;
+                secondTile = null;
             }
         }
     }
@@ -214,9 +259,10 @@ public class Game : MonoBehaviour
         }
         return directions;
     }
-    int CheckMatchingTilesRow(Tile swappingTile, Tile swappedTile)
+    List<Tile> CheckMatchingTilesRow(Tile swappingTile, Tile swappedTile)
     {
         int matches = 0;
+        List<Tile> matchedTiles = new List<Tile>();
         Tile[] swappedTileNeighbouringTiles = swappedTile.GetNeighbouringTiles();
         int swappingTileId = swappingTile.GetTileObjectId();
         if (swappingTile != swappedTileNeighbouringTiles[2] && swappingTile != swappedTileNeighbouringTiles[3])
@@ -299,11 +345,12 @@ public class Game : MonoBehaviour
                 }
             }
         }
-            return matches;
+            return matchedTiles;
     }
-    int CheckMatchingTilesColumn(Tile swappingTile, Tile swappedTile)
+    List<Tile> CheckMatchingTilesColumn(Tile swappingTile, Tile swappedTile)
     {
         int matches = 0;
+        List<Tile> matchedTiles = new List<Tile>();
         Tile[] swappedTileNeighbouringTiles = swappedTile.GetNeighbouringTiles();
         int swappingTileId = swappingTile.GetTileObjectId();
         if (swappingTile != swappedTileNeighbouringTiles[0] && swappingTile != swappedTileNeighbouringTiles[1])
@@ -385,7 +432,7 @@ public class Game : MonoBehaviour
                 }
             }
         }
-        return matches;
+        return matchedTiles;
     }
 
     IEnumerator MovePieces()
@@ -405,18 +452,23 @@ public class Game : MonoBehaviour
         selectedTile.InitializeTileImage();
         secondTile.InitializeTileImage();
 
-        selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
-
-        if (matchedTiles.Count() >= 2)
+        if (firstMatchSwap.Count() >= 3)
         {
-            foreach (Tile gameTile in matchedTiles)
+            foreach (Tile gameTile in firstMatchSwap)
             {
                 Destroy(gameTile.GetTileObject());
                 gameTile.InitializeTileImage();
             }
-            matchedTiles = new List<Tile>();
-            Destroy(secondTile.GetTileObject());
-            secondTile.InitializeTileImage();
+            firstMatchSwap = new List<Tile>();
+        }
+        if (secondMatchSwap.Count() >= 3)
+        {
+            foreach (Tile gameTile in secondMatchSwap)
+            {
+                Destroy(gameTile.GetTileObject());
+                gameTile.InitializeTileImage();
+            }
+            secondMatchSwap = new List<Tile>();
         }
         selectedTile = null;
         secondTile = null;
