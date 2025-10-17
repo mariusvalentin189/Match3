@@ -25,14 +25,17 @@ public class Game : MonoBehaviour
     bool canMove = true;
     List<Tile> firstMatchSwap = new List<Tile>();
     List<Tile> secondMatchSwap = new List<Tile>();
+    int[] matches;
     void Start()
     {
+        matches = new int[rowLength];
         gameTiles = GetComponentsInChildren<Tile>();
         SetTilesGameIndex();
     }
 
     void SetTilesGameIndex()
     {
+        //TODO: Change script to not have matches at the beginning of the level
         int currentIndex = 0;
         int currentRow = 0;
         while (currentIndex < gameTiles.Length)
@@ -134,6 +137,7 @@ public class Game : MonoBehaviour
 
                     //Start the Coroutine to handle destroying the mathed pieces
                     StartCoroutine(MovePieces());
+
                 }
                 else
                 {
@@ -456,7 +460,8 @@ public class Game : MonoBehaviour
         {
             foreach (Tile gameTile in firstMatchSwap)
             {
-                Destroy(gameTile.GetTileObject());
+                matches[gameTile.ColumnIndex]++;
+                DestroyImmediate(gameTile.GetTileObject());
                 gameTile.InitializeTileImage();
             }
             firstMatchSwap = new List<Tile>();
@@ -465,14 +470,43 @@ public class Game : MonoBehaviour
         {
             foreach (Tile gameTile in secondMatchSwap)
             {
-                Destroy(gameTile.GetTileObject());
+                DestroyImmediate(gameTile.GetTileObject());
                 gameTile.InitializeTileImage();
+                matches[gameTile.ColumnIndex]++;
             }
             secondMatchSwap = new List<Tile>();
         }
+        BringPiecesDown();
         selectedTile = null;
         secondTile = null;
         canMove = true;
 
+    }
+    void BringPiecesDown()
+    {
+        for (int i = 0; i < rowLength; i++)
+        {
+            if (matches[i] == 0)
+                continue;
+
+            for (int j = 0; j < gameTilesRowsCount - matches[i]; j++)
+            {
+                if (gameTiles[i + j * rowLength].GetTileObject() != null)
+                    continue;
+
+                //Move tiles from up to down
+                GameObject tileToMove = gameTiles[i + (j + matches[i]) * rowLength].GetTileObject();
+
+                tileToMove.transform.SetParent(gameTiles[i + j * rowLength].transform);
+                tileToMove.transform.localPosition = new Vector2(0, 0);
+
+                gameTiles[i + (j + matches[i]) * rowLength].InitializeTileImage();
+                gameTiles[i + j * rowLength].InitializeTileImage();
+
+                //TODO: Spawn tiles on the last row
+            }
+        }
+        matches = new int[rowLength];
+        canMove = true;
     }
 }

@@ -12,6 +12,7 @@ public class Tile : MonoBehaviour, IPointerDownHandler
     Tile rightTile;
     Tile upTile;
     Tile downTile;
+    public int ColumnIndex { get { return columnIndex; } }
     void Start()
     {
         tileObject = GetComponentInChildren<TileObject>();
@@ -58,8 +59,15 @@ public class Tile : MonoBehaviour, IPointerDownHandler
     }
     public void InitializeTileImage()
     {
-        tileObject = transform.GetChild(0).gameObject.GetComponent<TileObject>();
-        tileObject.ResetAnimationState();
+        if (transform.childCount == 0)
+        {
+            tileObject = null;
+        }
+        else
+        {
+            tileObject = transform.GetChild(0).gameObject.GetComponent<TileObject>();
+            tileObject.ResetAnimationState();
+        }
     }
     public Tile[] GetNeighbouringTiles()
     {
