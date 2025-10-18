@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
@@ -14,54 +15,186 @@ public class Game : MonoBehaviour
     {
         Instance = this;
     }
-    [SerializeField] int gameTilesRowsCount;
-    [SerializeField] int rowLength;
+    [SerializeField] int rowsCount;
+    [SerializeField] int columnsCount;
     [SerializeField] GameObject[] gameObjects;
     [SerializeField] Color selectedTileColor;
     [SerializeField] Color deselectedTileColor;
-    Tile[] gameTiles;
+    [SerializeField] Tile tileObject;
+    Tile[,] board;
     Tile selectedTile;
     Tile secondTile;
     bool canMove = true;
-    List<Tile> firstMatchSwap = new List<Tile>();
-    List<Tile> secondMatchSwap = new List<Tile>();
     int[] matches;
     void Start()
     {
-        matches = new int[rowLength];
-        gameTiles = GetComponentsInChildren<Tile>();
-        SetTilesGameIndex();
+        matches = new int[columnsCount];
+        board = new Tile[rowsCount, columnsCount];
+        SpawnGameTiles();
+    }
+    void SpawnGameTiles()
+    {
+        for (int i = 0; i < rowsCount; i++)
+        {
+            for (int j = 0; j < columnsCount; j++)
+            {
+                board[i,j] = Instantiate(tileObject, transform);    
+            }
+        }
+
+        SpawnTilesImage();
     }
 
-    void SetTilesGameIndex()
+    void SpawnTilesImage()
     {
-        //TODO: Change script to not have matches at the beginning of the level
-        int currentIndex = 0;
-        int currentRow = 0;
-        while (currentIndex < gameTiles.Length)
+        for (int i = 0; i < rowsCount; i++)
         {
-            int i = 0;
-            for (i = currentIndex; i < rowLength * (currentRow + 1); i++)
+            for (int j = 0; j < columnsCount; j++)
             {
                 int randomGameObjectIndex = UnityEngine.Random.Range(0, gameObjects.Length);
-                gameTiles[i].SetIndex(currentRow, i - currentIndex, gameObjects[randomGameObjectIndex]);
+                while (CheckMatchingTiles(randomGameObjectIndex, i, j))
+                {
+                    randomGameObjectIndex = UnityEngine.Random.Range(0, gameObjects.Length);
+                }
+                
+                board[i,j].SetIndex(gameObjects[randomGameObjectIndex], i, j);
             }
-            currentIndex = i;
-            currentRow += 1;
         }
 
-        for (int i = 0; i < gameTiles.Length; i++)
-        {
-            SetNeighbourTiles(i);
-        }
     }
+    
+    
+    bool CheckMatchingTiles(int objectType, int rowIndex, int columnIndex)
+    {
+        if (rowIndex >= 2)
+        {
+            if (board[rowIndex - 1, columnIndex].TileImageId == objectType && board[rowIndex - 2, columnIndex].TileImageId == objectType)
+            {
+                return true;
+            }
+        }
+        if (columnIndex >= 2)
+        {
+            if (board[rowIndex, columnIndex - 1].TileImageId == objectType && board[rowIndex, columnIndex - 2].TileImageId == objectType)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    bool CheckMatchingTilesAfterSwap(Tile tile)
+    {
+        int objectType = tile.TileImageId;
+        int rowIndex = tile.XIndex;
+        int columnIndex = tile.YIndex;
+        bool found = false;
+        //Column three match case but in between two tiles
+        if (rowIndex >= 1 && rowIndex <= rowsCount - 2)
+        {
+            if (board[rowIndex - 1, columnIndex].TileImageId == objectType && board[rowIndex + 1, columnIndex].TileImageId == objectType)
+            {
+                tile.IsMatched = true;
+                board[rowIndex - 1, columnIndex].IsMatched = true;
+                board[rowIndex + 1, columnIndex].IsMatched = true;
+                found = true;
+            }
+        }
+        //Row three match case but in between two tiles (can't be both in between two tiles on row and column)
+        if (!found && columnIndex >= 1 && columnIndex <= columnsCount - 2)
+        {
+            if (board[rowIndex, columnIndex - 1].TileImageId == objectType && board[rowIndex, columnIndex + 1].TileImageId == objectType)
+            {
+                tile.IsMatched = true;
+                board[rowIndex, columnIndex - 1].IsMatched = true;
+                board[rowIndex, columnIndex + 1].IsMatched = true;
+                found = true;
+            }
+        }
 
+        if (rowIndex >= 2)
+        {
+            if (board[rowIndex - 1, columnIndex].TileImageId == objectType && board[rowIndex - 2, columnIndex].TileImageId == objectType)
+            {
+                tile.IsMatched = true;
+                board[rowIndex - 1, columnIndex].IsMatched = true;
+                board[rowIndex - 2, columnIndex].IsMatched = true;
+                found =  true;
+
+                //Search opposite direction for one match (4 matching tiles case)
+                if (rowIndex <= rowsCount - 2)
+                {
+                    if (board[rowIndex + 1, columnIndex].TileImageId == objectType)
+                    {
+                        board[rowIndex + 1, columnIndex].IsMatched = true;
+                    }
+                }
+            }
+        }
+        if (rowIndex <= rowsCount - 3)
+        {
+            if (board[rowIndex + 1, columnIndex].TileImageId == objectType && board[rowIndex + 2, columnIndex].TileImageId == objectType)
+            {
+                tile.IsMatched = true;
+                board[rowIndex + 1, columnIndex].IsMatched = true;
+                board[rowIndex + 2, columnIndex].IsMatched = true;
+                found = true;
+
+                //Search opposite direction for one match (4 matching tiles case)
+                if (rowIndex >= 1)
+                {
+                    if (board[rowIndex - 1, columnIndex].TileImageId == objectType)
+                    {
+                        board[rowIndex - 1, columnIndex].IsMatched = true;
+                    }
+                }
+            }
+        }
+        if (columnIndex >= 2)
+        {
+            if (board[rowIndex, columnIndex - 1].TileImageId == objectType && board[rowIndex, columnIndex - 2].TileImageId == objectType)
+            {
+                tile.IsMatched = true;
+                board[rowIndex, columnIndex - 1].IsMatched = true;
+                board[rowIndex, columnIndex - 2].IsMatched = true;
+                found = true;
+
+                //Search opposite direction for one match (4 matching tiles case)
+                if (columnIndex <= columnsCount - 2)
+                {
+                    if (board[rowIndex, columnIndex + 1].TileImageId == objectType)
+                    {
+                        board[rowIndex, columnIndex + 1].IsMatched = true;
+                    }
+                }
+            }
+        }
+        if (columnIndex <= columnsCount - 3)
+        {
+            if (board[rowIndex, columnIndex + 1].TileImageId == objectType && board[rowIndex, columnIndex + 2].TileImageId == objectType)
+            {
+                secondTile.IsMatched = true;
+                board[rowIndex, columnIndex + 1].IsMatched = true;
+                board[rowIndex, columnIndex + 2].IsMatched = true;
+                found = true;
+
+                //Search opposite direction for one match (4 matching tiles case)
+                if (columnIndex >= 1)
+                {
+                    if (board[rowIndex, columnIndex - 1].TileImageId == objectType)
+                    {
+                        board[rowIndex, columnIndex - 1].IsMatched = true;
+                    }
+                }
+            }
+        }
+        return found;
+    }
     public void SelectTile(Tile tile)
     {
         if (!canMove) return;
 
         //Temp (No tiles falling after matching for now)
-        if (tile.GetTileObject() == null)
+        if (tile.TileImageObject == null)
         {
             //Unselect if previously selected
             if (selectedTile)
@@ -83,50 +216,14 @@ public class Game : MonoBehaviour
             //Select second tile
             secondTile = tile;
 
-            //Check if a match can be made and cancel the swap if not possible
-            int[] idxTileSelected = selectedTile.GetIndexes();
-            int[] idxTileCurrent = secondTile.GetIndexes();
-
             //Check if beside the current tile (up,down,left,right)
-            if (idxTileCurrent[0] == idxTileSelected[0] || idxTileCurrent[1] == idxTileSelected[1])
+            if (selectedTile.XIndex == secondTile.XIndex || selectedTile.YIndex == secondTile.YIndex)
             {
 
                 //Check if the first selected tile is the one to make the match
-                firstMatchSwap = CheckMatchingTilesRow(selectedTile, secondTile);
-                if (firstMatchSwap.Count() >= 2)
+                if (CheckMatches())
                 {
-                    firstMatchSwap.Add(secondTile);
-                }
-                else
-                {
-                    firstMatchSwap = CheckMatchingTilesColumn(selectedTile, secondTile);
-                    if (firstMatchSwap.Count() >= 2)
-                    {
-                        firstMatchSwap.Add(secondTile);
-                    }
-                }
-
-                //Check if the second selected tile is the one to make the match
-                secondMatchSwap = CheckMatchingTilesRow(secondTile, selectedTile);
-                if (secondMatchSwap.Count() >= 2)
-                {
-                    secondMatchSwap.Add(selectedTile);
-                }
-                else
-                {
-                    secondMatchSwap = CheckMatchingTilesColumn(secondTile, selectedTile);
-                    if (secondMatchSwap.Count() >= 2)
-                    {
-                        secondMatchSwap.Add(selectedTile);
-                    }
-                }
-                //Check the matches for either the fist or second selected tile (including the selected tiles) is at least 3
-                if (firstMatchSwap.Count() >= 3 || secondMatchSwap.Count() >= 3)
-                {
-
-                    //Get the direction the second tile is in relation to the first tile
-                    //Direction are represented by int numbers: 0 - left, 1- right, 2-up, 3- down
-                    int[] directions = GetTilesDirection(idxTileCurrent, idxTileSelected);
+                    int[] directions = GetTilesDirection();
 
                     //Deselect the selected tile
                     selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
@@ -141,6 +238,7 @@ public class Game : MonoBehaviour
                 }
                 else
                 {
+
                     //Cancel Selection
                     selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
                     selectedTile = null;
@@ -157,86 +255,41 @@ public class Game : MonoBehaviour
             }
         }
     }
-    void SetNeighbourTiles(int index)
+
+    bool CheckMatches()
     {
-        Tile leftTile = null;
-        Tile rightTile = null;
-        Tile upTile = null;
-        Tile downTile = null;
-        if (index + 1 == gameTiles.Length)
+        bool found = false;
+
+        //Temporary swap tiles colors
+        TileImage tempImg = selectedTile.TileImageObject.GetComponent<TileImage>();
+        selectedTile.SetTileImaget(secondTile.TileImageObject.GetComponent<TileImage>());
+        secondTile.SetTileImaget(tempImg);
+
+        if (CheckMatchingTilesAfterSwap(selectedTile))
         {
-            rightTile = gameTiles[index - 1];
-            downTile = gameTiles[index - rowLength];
+            found = true;
         }
-        else if (index == 0)
+
+        if (CheckMatchingTilesAfterSwap(secondTile))
         {
-            leftTile = gameTiles[index + 1];
-            upTile = gameTiles[index + rowLength];
+            found = true;
         }
-        //Edges
-        else
-        {
-            int[] tileGameIndexes = gameTiles[index].GetIndexes();
-            //Right upper corner
-            if (tileGameIndexes[0] == gameTilesRowsCount - 1 && tileGameIndexes[1] == 0)
-            {
-                leftTile = gameTiles[index + 1];
-                downTile = gameTiles[index - rowLength];
-            }
-            //Left Lower Corner
-            else if (tileGameIndexes[0] == 0 && tileGameIndexes[1] == rowLength - 1)
-            {
-                rightTile = gameTiles[index - 1];
-                upTile = gameTiles[index + rowLength];
-            }
-            //Right Edge
-            else if (tileGameIndexes[1] == 0)
-            {
-                leftTile = gameTiles[index + 1];
-                upTile = gameTiles[index + rowLength];
-                downTile = gameTiles[index - rowLength];
-            }
-            //Left Edge
-            else if (tileGameIndexes[1] == rowLength - 1)
-            {
-                rightTile = gameTiles[index - 1];
-                upTile = gameTiles[index + rowLength];
-                downTile = gameTiles[index - rowLength];
-            }
-            //lower Edge
-            else if (tileGameIndexes[0] == 0)
-            {
-                upTile = gameTiles[index + rowLength];
-                leftTile = gameTiles[index + 1];
-                rightTile = gameTiles[index - 1];
-            }
-            //upper Edge
-            else if (tileGameIndexes[0] == gameTilesRowsCount - 1)
-            {
-                downTile = gameTiles[index - rowLength];
-                leftTile = gameTiles[index + 1];
-                rightTile = gameTiles[index - 1];
-            }
-            //middle area
-            else
-            {
-                upTile = gameTiles[index + rowLength];
-                downTile = gameTiles[index - rowLength];
-                leftTile = gameTiles[index + 1];
-                rightTile = gameTiles[index - 1];
-            }
-        }
-        gameTiles[index].SetNeighbourTiles(leftTile, rightTile, upTile, downTile);
+
+        //Swap tiles back
+        tempImg = selectedTile.TileImageObject.GetComponent<TileImage>();
+        selectedTile.SetTileImaget(secondTile.TileImageObject.GetComponent<TileImage>());
+        secondTile.SetTileImaget(tempImg);
+        return found;
     }
-    
-    int[] GetTilesDirection(int[] firstTileIndexes, int[] secondTileIndexes)
+
+    int[] GetTilesDirection()
     {
         int[] directions = new int[2];
         //Is on the same row
         // 0 - left, 1- right, 2-up, 3- down
-        if (firstTileIndexes[0] == secondTileIndexes[0])
+        if (selectedTile.XIndex == secondTile.XIndex)
         {
-            if (firstTileIndexes[1] < secondTileIndexes[1])
+            if (selectedTile.YIndex > secondTile.YIndex)
             {
                 directions[0] = 0;
                 directions[1] = 1;
@@ -248,9 +301,9 @@ public class Game : MonoBehaviour
             }
         }
         //Same column
-        else if (firstTileIndexes[1] == secondTileIndexes[1])
+        else if (selectedTile.YIndex == secondTile.YIndex)
         {
-            if (firstTileIndexes[0] < secondTileIndexes[0])
+            if (selectedTile.XIndex > secondTile.XIndex)
             {
                 directions[0] = 2;
                 directions[1] = 3;
@@ -263,189 +316,15 @@ public class Game : MonoBehaviour
         }
         return directions;
     }
-    List<Tile> CheckMatchingTilesRow(Tile swappingTile, Tile swappedTile)
-    {
-        int matches = 0;
-        List<Tile> matchedTiles = new List<Tile>();
-        Tile[] swappedTileNeighbouringTiles = swappedTile.GetNeighbouringTiles();
-        int swappingTileId = swappingTile.GetTileObjectId();
-        if (swappingTile != swappedTileNeighbouringTiles[2] && swappingTile != swappedTileNeighbouringTiles[3])
-        {
-            //Check Row left
-            if (swappedTileNeighbouringTiles[2])
-            {
-                if (swappedTileNeighbouringTiles[2].GetTileObjectId() == swappingTileId)
-                {
-                    matches++;
-                    matchedTiles.Add(swappedTileNeighbouringTiles[2]);
-                    Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[2].GetNeighbouringTiles();
-                    if (swappedTileNeighbouringTile1[2])
-                        if (swappedTileNeighbouringTile1[2].GetTileObjectId() == swappingTileId)
-                        {
-                            matches++;
-                            matchedTiles.Add(swappedTileNeighbouringTile1[2]);
-                        }
-                }
-            }
-            //Check Row right
-            if (swappedTileNeighbouringTiles[3])
-            {
-                if (swappedTileNeighbouringTiles[3].GetTileObjectId() == swappingTileId)
-                {
-                    matches++;
-                    matchedTiles.Add(swappedTileNeighbouringTiles[3]);
-                    Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[3].GetNeighbouringTiles();
-                    if (swappedTileNeighbouringTile1[3])
-                        if (swappedTileNeighbouringTile1[3].GetTileObjectId() == swappingTileId)
-                        {
-                            matches++;
-                            matchedTiles.Add(swappedTileNeighbouringTile1[3]);
-                        }
-                }
-            }
-            //If only one match is found do not include it
-            if (matches == 1)
-            {
-                matches = 0;
-                matchedTiles = new List<Tile>();
-            }
-            //Check down column if moving from up
-            if (swappingTile == swappedTileNeighbouringTiles[0])
-            {
-                if (swappedTileNeighbouringTiles[1])
-                {
-                    if (swappedTileNeighbouringTiles[1].GetTileObjectId() == swappingTileId)
-                    {
-                        Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[1].GetNeighbouringTiles();
-                        if (swappedTileNeighbouringTile1[1])
-                            if (swappedTileNeighbouringTile1[1].GetTileObjectId() == swappingTileId)
-                            {
-                                //Only of two matches are found, include them
-                                matches+=2;
-                                matchedTiles.Add(swappedTileNeighbouringTiles[1]);
-                                matchedTiles.Add(swappedTileNeighbouringTile1[1]);
-                            }
-                    }
-                }
-
-            }
-            //Check up column when moving from down
-            else if (swappingTile == swappedTileNeighbouringTiles[1])
-            {
-                if (swappedTileNeighbouringTiles[0])
-                {
-                    if (swappedTileNeighbouringTiles[0].GetTileObjectId() == swappingTileId)
-                    {
-                        Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[0].GetNeighbouringTiles();
-                        if (swappedTileNeighbouringTile1[0])
-                            if (swappedTileNeighbouringTile1[0].GetTileObjectId() == swappingTileId)
-                            {
-                                //Only of two matches are found, include them
-                                matches += 2;
-                                matchedTiles.Add(swappedTileNeighbouringTiles[0]);
-                                matchedTiles.Add(swappedTileNeighbouringTile1[0]);
-                            }
-                    }
-                }
-            }
-        }
-            return matchedTiles;
-    }
-    List<Tile> CheckMatchingTilesColumn(Tile swappingTile, Tile swappedTile)
-    {
-        int matches = 0;
-        List<Tile> matchedTiles = new List<Tile>();
-        Tile[] swappedTileNeighbouringTiles = swappedTile.GetNeighbouringTiles();
-        int swappingTileId = swappingTile.GetTileObjectId();
-        if (swappingTile != swappedTileNeighbouringTiles[0] && swappingTile != swappedTileNeighbouringTiles[1])
-        {
-            //Check column up
-            if (swappedTileNeighbouringTiles[0])
-            {
-                if (swappedTileNeighbouringTiles[0].GetTileObjectId() == swappingTileId)
-                {
-                    matches++;
-                    matchedTiles.Add(swappedTileNeighbouringTiles[0]);
-                    Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[0].GetNeighbouringTiles();
-                    if (swappedTileNeighbouringTile1[0])
-                        if (swappedTileNeighbouringTile1[0].GetTileObjectId() == swappingTileId)
-                        {
-                            matches++;
-                            matchedTiles.Add(swappedTileNeighbouringTile1[0]);
-                        }
-                }
-            }
-            //Check column down
-            if (swappedTileNeighbouringTiles[1])
-            {
-                if (swappedTileNeighbouringTiles[1].GetTileObjectId() == swappingTileId)
-                {
-                    matches++;
-                    matchedTiles.Add(swappedTileNeighbouringTiles[1]);
-                    Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[1].GetNeighbouringTiles();
-                    if (swappedTileNeighbouringTile1[1])
-                        if (swappedTileNeighbouringTile1[1].GetTileObjectId() == swappingTileId)
-                        {
-                            matchedTiles.Add(swappedTileNeighbouringTile1[1]);
-                            matches++;
-                        }
-                }
-            }
-            //If only one match is found do not include it
-            if (matches == 1)
-            {
-                matches = 0;
-                matchedTiles = new List<Tile>();
-            }
-            //Check right when moving from left
-            if (swappingTile == swappedTileNeighbouringTiles[2])
-            {
-                if (swappedTileNeighbouringTiles[3])
-                {
-                    if (swappedTileNeighbouringTiles[3].GetTileObjectId() == swappingTileId)
-                    {  
-                        Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[3].GetNeighbouringTiles();
-                        if (swappedTileNeighbouringTile1[3])
-                            if (swappedTileNeighbouringTile1[3].GetTileObjectId() == swappingTileId)
-                            {
-                                //Only of two matches are found, include them
-                                matches += 2;
-                                matchedTiles.Add(swappedTileNeighbouringTiles[3]);
-                                matchedTiles.Add(swappedTileNeighbouringTile1[3]);
-                            }
-                    }
-                }
-            }
-            //Check left when moving from right
-            else if (swappingTile == swappedTileNeighbouringTiles[3])
-            {
-                if (swappedTileNeighbouringTiles[2])
-                {
-                    if (swappedTileNeighbouringTiles[2].GetTileObjectId() == swappingTileId)
-                    {
-                        Tile[] swappedTileNeighbouringTile1 = swappedTileNeighbouringTiles[2].GetNeighbouringTiles();
-                        if (swappedTileNeighbouringTile1[2])
-                            if (swappedTileNeighbouringTile1[2].GetTileObjectId() == swappingTileId)
-                            {
-                                //Only of two matches are found, include them
-                                matches += 2;
-                                matchedTiles.Add(swappedTileNeighbouringTiles[2]);
-                                matchedTiles.Add(swappedTileNeighbouringTile1[2]);
-                            }
-                    }
-                }
-            }
-        }
-        return matchedTiles;
-    }
 
     IEnumerator MovePieces()
     {
         canMove = false;
         yield return new WaitForSeconds(0.3f);
+
         //Swap Tiles
-        GameObject firstImage = selectedTile.GetTileObject();
-        GameObject secondImage = secondTile.GetTileObject();
+        GameObject firstImage = selectedTile.TileImageObject;
+        GameObject secondImage = secondTile.TileImageObject;
 
         firstImage.transform.SetParent(secondTile.transform);
         firstImage.transform.localPosition = new Vector2(0, 0);
@@ -456,25 +335,18 @@ public class Game : MonoBehaviour
         selectedTile.InitializeTileImage();
         secondTile.InitializeTileImage();
 
-        if (firstMatchSwap.Count() >= 3)
+        for (int i = 0; i < rowsCount; i++)
         {
-            foreach (Tile gameTile in firstMatchSwap)
-            {
-                matches[gameTile.ColumnIndex]++;
-                DestroyImmediate(gameTile.GetTileObject());
-                gameTile.InitializeTileImage();
+            for (int j = 0; j < columnsCount; j++)
+            { 
+                if (board[i, j].IsMatched)
+                {
+                    matches[j]++;
+                    DestroyImmediate(board[i,j].TileImageObject);
+                    board[i, j].InitializeTileImage();
+                    board[i, j].IsMatched = false;
+                }
             }
-            firstMatchSwap = new List<Tile>();
-        }
-        if (secondMatchSwap.Count() >= 3)
-        {
-            foreach (Tile gameTile in secondMatchSwap)
-            {
-                DestroyImmediate(gameTile.GetTileObject());
-                gameTile.InitializeTileImage();
-                matches[gameTile.ColumnIndex]++;
-            }
-            secondMatchSwap = new List<Tile>();
         }
         BringPiecesDown();
         selectedTile = null;
@@ -484,29 +356,29 @@ public class Game : MonoBehaviour
     }
     void BringPiecesDown()
     {
-        for (int i = 0; i < rowLength; i++)
+        for (int column = 0; column < columnsCount; column++)
         {
-            if (matches[i] == 0)
+            if (matches[column] == 0)
                 continue;
 
-            for (int j = 0; j < gameTilesRowsCount - matches[i]; j++)
+            for (int row = 0; row < rowsCount - matches[column]; row++)
             {
-                if (gameTiles[i + j * rowLength].GetTileObject() != null)
+                if (board[row, column].TileImageObject != null)
                     continue;
 
                 //Move tiles from up to down
-                GameObject tileToMove = gameTiles[i + (j + matches[i]) * rowLength].GetTileObject();
+                GameObject tileToMove = board[row + matches[column], column].TileImageObject;
 
-                tileToMove.transform.SetParent(gameTiles[i + j * rowLength].transform);
+                tileToMove.transform.SetParent(board[row, column].transform);
                 tileToMove.transform.localPosition = new Vector2(0, 0);
 
-                gameTiles[i + (j + matches[i]) * rowLength].InitializeTileImage();
-                gameTiles[i + j * rowLength].InitializeTileImage();
+                board[row, column].InitializeTileImage();
+                board[row + matches[column], column].InitializeTileImage();
 
                 //TODO: Spawn tiles on the last row
             }
         }
-        matches = new int[rowLength];
+        matches = new int[columnsCount];
         canMove = true;
     }
 }

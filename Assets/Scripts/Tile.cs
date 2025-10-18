@@ -5,52 +5,28 @@ using UnityEngine.UIElements;
 
 public class Tile : MonoBehaviour, IPointerDownHandler
 {
-    TileObject tileObject;
-    int rowIndex;
-    int columnIndex;
-    Tile leftTile;
-    Tile rightTile;
-    Tile upTile;
-    Tile downTile;
-    public int ColumnIndex { get { return columnIndex; } }
+    TileImage tileImage;
+    int xIndex;
+    int yIndex;
+    bool isMatched;
+    public int XIndex { get { return xIndex; } }
+    public int YIndex { get { return yIndex; } }
+    public bool IsMatched { get { return isMatched; } set { isMatched = value; } }
+    public GameObject TileImageObject { get { return tileImage ? tileImage.gameObject : null; } }
+    public int TileImageId { get { return tileImage.id; } }
+
     void Start()
     {
-        tileObject = GetComponentInChildren<TileObject>();
+        tileImage = GetComponentInChildren<TileImage>();
     }
-    public GameObject GetTileObject()
+    public void SetIndex(GameObject tileObj, int x, int y)
     {
-        return tileObject ? tileObject.gameObject : null;
-    }
-    public int GetTileObjectId()
-    {
-        return tileObject.id;
-    }
-    public void SetTileObjectId(int id)
-    {
-        tileObject.id = id;
-    }
-    public int[] GetIndexes()
-    {
-        int[] r = new int[2];
-        r[0] = rowIndex;
-        r[1] = columnIndex;
-        return r;
-    }
-    public void SetIndex(int rowValue, int columnValue, GameObject tileObj)
-    {
-        rowIndex = rowValue;
-        columnIndex = columnValue;
-        GameObject t = Instantiate<GameObject>(tileObj);
-        tileObject = t.GetComponent<TileObject>();
-        tileObject.transform.SetParent(this.transform);
-        tileObject.transform.localPosition = new Vector2(0, 0);
-    }
-    public void SetNeighbourTiles(Tile left, Tile right, Tile up, Tile down)
-    {
-        leftTile = left;
-        rightTile = right;
-        upTile = up;
-        downTile = down;
+        GameObject t = Instantiate(tileObj);
+        tileImage = t.GetComponent<TileImage>();
+        tileImage.transform.SetParent(this.transform);
+        tileImage.transform.localPosition = new Vector2(0, 0);
+        xIndex = x;
+        yIndex = y;
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -61,25 +37,20 @@ public class Tile : MonoBehaviour, IPointerDownHandler
     {
         if (transform.childCount == 0)
         {
-            tileObject = null;
+            tileImage = null;
         }
         else
         {
-            tileObject = transform.GetChild(0).gameObject.GetComponent<TileObject>();
-            tileObject.ResetAnimationState();
+            tileImage = transform.GetChild(0).gameObject.GetComponent<TileImage>();
+            tileImage.ResetAnimationState();
         }
     }
-    public Tile[] GetNeighbouringTiles()
+    public void SetTileImaget(TileImage tileImg)
     {
-        Tile[] tiles = new Tile[4];
-        tiles[0] = upTile;
-        tiles[1] = downTile;
-        tiles[2] = leftTile;
-        tiles[3] = rightTile;
-        return tiles;
+        tileImage = tileImg;
     }
     public void PlaySwapAnimation(int direction)
     {
-        tileObject.PlayMoveAnimation(direction);
+        tileImage.PlayMoveAnimation(direction);
     }
 }
