@@ -19,11 +19,12 @@ public class Tile : MonoBehaviour, IPointerDownHandler
     {
         tileImage = GetComponentInChildren<TileImage>();
     }
-    public void SetIndex(GameObject tileObj, int x, int y)
+
+    public void SetTileImage(GameObject tileObj, int x, int y)
     {
         GameObject t = Instantiate(tileObj);
         tileImage = t.GetComponent<TileImage>();
-        tileImage.transform.SetParent(this.transform);
+        tileImage.transform.SetParent(transform);
         tileImage.transform.localPosition = new Vector2(0, 0);
         xIndex = x;
         yIndex = y;
@@ -42,15 +43,10 @@ public class Tile : MonoBehaviour, IPointerDownHandler
         else
         {
             tileImage = transform.GetChild(0).gameObject.GetComponent<TileImage>();
-            tileImage.ResetAnimationState();
         }
     }
     public void SetTileImaget(TileImage tileImg)
     {
         tileImage = tileImg;
-    }
-    public void PlaySwapAnimation(int direction)
-    {
-        tileImage.PlayMoveAnimation(direction);
     }
 }

@@ -6,6 +6,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
+using static UnityEngine.Rendering.DebugUI.Table;
 
 public class Game : MonoBehaviour
 {
@@ -17,17 +18,20 @@ public class Game : MonoBehaviour
     }
     [SerializeField] int rowsCount;
     [SerializeField] int columnsCount;
-    [SerializeField] GameObject[] gameObjects;
+    [SerializeField] GameObject[] tileObjects;
     [SerializeField] Color selectedTileColor;
     [SerializeField] Color deselectedTileColor;
-    [SerializeField] Tile tileObject;
+    [SerializeField] Tile tilePrefab;
+    [SerializeField] private RectTransform animationLayer; // Empty GameObject under Canvas (with no layout groups)
     Tile[,] board;
     Tile selectedTile;
     Tile secondTile;
     bool canMove = true;
     int[] matches;
+    Canvas canvas;
     void Start()
     {
+        canvas = GetComponentInParent<Canvas>();
         matches = new int[columnsCount];
         board = new Tile[rowsCount, columnsCount];
         SpawnGameTiles();
@@ -38,10 +42,9 @@ public class Game : MonoBehaviour
         {
             for (int j = 0; j < columnsCount; j++)
             {
-                board[i,j] = Instantiate(tileObject, transform);    
+                board[i,j] = Instantiate(tilePrefab, transform);    
             }
         }
-
         SpawnTilesImage();
     }
 
@@ -51,13 +54,13 @@ public class Game : MonoBehaviour
         {
             for (int j = 0; j < columnsCount; j++)
             {
-                int randomGameObjectIndex = UnityEngine.Random.Range(0, gameObjects.Length);
+                int randomGameObjectIndex = UnityEngine.Random.Range(0, tileObjects.Length);
                 while (CheckMatchingTiles(randomGameObjectIndex, i, j))
                 {
-                    randomGameObjectIndex = UnityEngine.Random.Range(0, gameObjects.Length);
+                    randomGameObjectIndex = UnityEngine.Random.Range(0, tileObjects.Length);
                 }
                 
-                board[i,j].SetIndex(gameObjects[randomGameObjectIndex], i, j);
+                board[i,j].SetTileImage(tileObjects[randomGameObjectIndex], i, j);
             }
         }
 
@@ -223,18 +226,12 @@ public class Game : MonoBehaviour
                 //Check if the first selected tile is the one to make the match
                 if (CheckMatches())
                 {
-                    int[] directions = GetTilesDirection();
 
                     //Deselect the selected tile
-                    selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
-
-                    //Play swap animation based on the direction
-                    selectedTile.PlaySwapAnimation(directions[1]);
-                    secondTile.PlaySwapAnimation(directions[0]);
+                    selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;;
 
                     //Start the Coroutine to handle destroying the mathed pieces
                     StartCoroutine(MovePieces());
-
                 }
                 else
                 {
@@ -282,79 +279,103 @@ public class Game : MonoBehaviour
         return found;
     }
 
-    int[] GetTilesDirection()
-    {
-        int[] directions = new int[2];
-        //Is on the same row
-        // 0 - left, 1- right, 2-up, 3- down
-        if (selectedTile.XIndex == secondTile.XIndex)
-        {
-            if (selectedTile.YIndex > secondTile.YIndex)
-            {
-                directions[0] = 0;
-                directions[1] = 1;
-            }
-            else
-            {
-                directions[0] = 1;
-                directions[1] = 0;
-            }
-        }
-        //Same column
-        else if (selectedTile.YIndex == secondTile.YIndex)
-        {
-            if (selectedTile.XIndex > secondTile.XIndex)
-            {
-                directions[0] = 2;
-                directions[1] = 3;
-            }
-            else
-            {
-                directions[0] = 3;
-                directions[1] = 2;
-            }
-        }
-        return directions;
-    }
-
     IEnumerator MovePieces()
     {
+        //Restrict movement while the pieces are being swapped
         canMove = false;
-        yield return new WaitForSeconds(0.3f);
 
-        //Swap Tiles
-        GameObject firstImage = selectedTile.TileImageObject;
-        GameObject secondImage = secondTile.TileImageObject;
+        //Duration of tthe swap
+        float duration = 0.2f;
 
-        firstImage.transform.SetParent(secondTile.transform);
-        firstImage.transform.localPosition = new Vector2(0, 0);
+        //Get the tiles rectransform
+        RectTransform tile1 = selectedTile.TileImageObject.GetComponent<RectTransform>();
+        RectTransform tile2 = secondTile.TileImageObject.GetComponent<RectTransform>();
 
-        secondImage.transform.SetParent(selectedTile.transform);
-        secondImage.transform.localPosition = new Vector2(0, 0);
+        // Get original parents (tiles)
+        Transform parentTile1 = tile1.parent;
+        Transform parentTile2 = tile2.parent;
 
+        // Get local positions relative to the animation layer
+        Vector2 localPosTile1 = WorldToLocalInRect(tile1.position, animationLayer, canvas);
+        Vector2 localPosTile2 = WorldToLocalInRect(tile2.position, animationLayer, canvas);
+
+        // Unparent and move to animation layer
+        tile1.SetParent(animationLayer, worldPositionStays: false);
+        tile2.SetParent(animationLayer, worldPositionStays: false);
+
+        // Set the new anchored positions
+        tile1.anchoredPosition = localPosTile1;
+        tile2.anchoredPosition = localPosTile2;
+
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            float t = Mathf.Clamp01(elapsed / duration);
+            float lerpTime = Mathf.SmoothStep(0f, 1f, t);
+
+            tile1.anchoredPosition = Vector2.Lerp(localPosTile1, localPosTile2, lerpTime);
+            tile2.anchoredPosition = Vector2.Lerp(localPosTile2, localPosTile1, lerpTime);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Snap to final positions
+        tile1.anchoredPosition = localPosTile2;
+        tile2.anchoredPosition = localPosTile1;
+
+        // Reparent back to their new tiles (swap)
+        tile1.SetParent(parentTile2);
+        tile1.transform.localPosition = Vector3.zero;
+        tile2.SetParent(parentTile1);
+        tile2.transform.localPosition = Vector3.zero;
+
+        // Set the tile child object
         selectedTile.InitializeTileImage();
         secondTile.InitializeTileImage();
 
+        //Destroy matched tiles and count the number of matches for each column
         for (int i = 0; i < rowsCount; i++)
         {
             for (int j = 0; j < columnsCount; j++)
-            { 
+            {
                 if (board[i, j].IsMatched)
                 {
                     matches[j]++;
-                    DestroyImmediate(board[i,j].TileImageObject);
+                    DestroyImmediate(board[i, j].TileImageObject);
                     board[i, j].InitializeTileImage();
                     board[i, j].IsMatched = false;
                 }
             }
         }
-        BringPiecesDown();
+
+        //BringPiecesDown();
+
         selectedTile = null;
         secondTile = null;
         canMove = true;
 
     }
+
+    // Cconvert world position to anchored local position in a RectTransform
+    Vector2 WorldToLocalInRect(Vector3 worldPos, RectTransform targetRect, Canvas canvas)
+    {
+        Vector2 localPoint;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(targetRect, worldPos, canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera, out localPoint);
+        return localPoint;
+    }
+
     void BringPiecesDown()
+    {
+        //TODO: Change to not make use of the animation
+        //if (!bringingTilesDown)
+        //    StartCoroutine(BringTilesDown());
+
+        matches = new int[columnsCount];
+        canMove = true;
+    }
+    IEnumerator BringTilesDown()
     {
         for (int column = 0; column < columnsCount; column++)
         {
@@ -365,7 +386,8 @@ public class Game : MonoBehaviour
             {
                 if (board[row, column].TileImageObject != null)
                     continue;
-
+ 
+                yield return new WaitForSeconds(0.3f);
                 //Move tiles from up to down
                 GameObject tileToMove = board[row + matches[column], column].TileImageObject;
 
@@ -374,11 +396,9 @@ public class Game : MonoBehaviour
 
                 board[row, column].InitializeTileImage();
                 board[row + matches[column], column].InitializeTileImage();
-
                 //TODO: Spawn tiles on the last row
             }
+
         }
-        matches = new int[columnsCount];
-        canMove = true;
     }
 }
