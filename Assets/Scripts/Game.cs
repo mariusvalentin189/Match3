@@ -1,12 +1,10 @@
+using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using UnityEditor.Tilemaps;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.UIElements;
-using static UnityEngine.Rendering.DebugUI.Table;
 
 public class Game : MonoBehaviour
 {
@@ -19,10 +17,11 @@ public class Game : MonoBehaviour
     [SerializeField] int rowsCount;
     [SerializeField] int columnsCount;
     [SerializeField] GameObject[] tileObjects;
-    [SerializeField] Color selectedTileColor;
-    [SerializeField] Color deselectedTileColor;
-    [SerializeField] Tile tilePrefab;
-    [SerializeField] private RectTransform animationLayer; // Empty GameObject under Canvas (with no layout groups)
+    [SerializeField] Color selectedTileColor; //Tile color for when selected
+    [SerializeField] Color deselectedTileColor; //Tile color for when deselected
+    [SerializeField] Tile tilePrefab; // Tile to spawn prefab
+    [SerializeField] RectTransform animationLayer; // Empty GameObject under Canvas (with no layout groups)
+    [SerializeField] float duration = 0.2f; // Tiles swap or fall duration
     Tile[,] board;
     Tile selectedTile;
     Tile secondTile;
@@ -55,7 +54,7 @@ public class Game : MonoBehaviour
             for (int j = 0; j < columnsCount; j++)
             {
                 int randomGameObjectIndex = UnityEngine.Random.Range(0, tileObjects.Length);
-                while (CheckMatchingTiles(randomGameObjectIndex, i, j))
+                while (CheckMatchingTilesOnInitialize(randomGameObjectIndex, i, j))
                 {
                     randomGameObjectIndex = UnityEngine.Random.Range(0, tileObjects.Length);
                 }
@@ -67,7 +66,7 @@ public class Game : MonoBehaviour
     }
     
     
-    bool CheckMatchingTiles(int objectType, int rowIndex, int columnIndex)
+    bool CheckMatchingTilesOnInitialize(int objectType, int rowIndex, int columnIndex)
     {
         if (rowIndex >= 2)
         {
@@ -91,29 +90,6 @@ public class Game : MonoBehaviour
         int rowIndex = tile.XIndex;
         int columnIndex = tile.YIndex;
         bool found = false;
-        //Column three match case but in between two tiles
-        if (rowIndex >= 1 && rowIndex <= rowsCount - 2)
-        {
-            if (board[rowIndex - 1, columnIndex].TileImageId == objectType && board[rowIndex + 1, columnIndex].TileImageId == objectType)
-            {
-                tile.IsMatched = true;
-                board[rowIndex - 1, columnIndex].IsMatched = true;
-                board[rowIndex + 1, columnIndex].IsMatched = true;
-                found = true;
-            }
-        }
-        //Row three match case but in between two tiles (can't be both in between two tiles on row and column)
-        if (!found && columnIndex >= 1 && columnIndex <= columnsCount - 2)
-        {
-            if (board[rowIndex, columnIndex - 1].TileImageId == objectType && board[rowIndex, columnIndex + 1].TileImageId == objectType)
-            {
-                tile.IsMatched = true;
-                board[rowIndex, columnIndex - 1].IsMatched = true;
-                board[rowIndex, columnIndex + 1].IsMatched = true;
-                found = true;
-            }
-        }
-
         if (rowIndex >= 2)
         {
             if (board[rowIndex - 1, columnIndex].TileImageId == objectType && board[rowIndex - 2, columnIndex].TileImageId == objectType)
@@ -188,6 +164,28 @@ public class Game : MonoBehaviour
                         board[rowIndex, columnIndex - 1].IsMatched = true;
                     }
                 }
+            }
+        }
+        //Column three match case but in between two tiles
+        if (rowIndex >= 1 && rowIndex <= rowsCount - 2)
+        {
+            if (board[rowIndex - 1, columnIndex].TileImageId == objectType && board[rowIndex + 1, columnIndex].TileImageId == objectType)
+            {
+                tile.IsMatched = true;
+                board[rowIndex - 1, columnIndex].IsMatched = true;
+                board[rowIndex + 1, columnIndex].IsMatched = true;
+                found = true;
+            }
+        }
+        //Row three match case but in between two tiles
+        if (columnIndex >= 1 && columnIndex <= columnsCount - 2)
+        {
+            if (board[rowIndex, columnIndex - 1].TileImageId == objectType && board[rowIndex, columnIndex + 1].TileImageId == objectType)
+            {
+                tile.IsMatched = true;
+                board[rowIndex, columnIndex - 1].IsMatched = true;
+                board[rowIndex, columnIndex + 1].IsMatched = true;
+                found = true;
             }
         }
         return found;
@@ -284,9 +282,6 @@ public class Game : MonoBehaviour
         //Restrict movement while the pieces are being swapped
         canMove = false;
 
-        //Duration of tthe swap
-        float duration = 0.2f;
-
         //Get the tiles rectransform
         RectTransform tile1 = selectedTile.TileImageObject.GetComponent<RectTransform>();
         RectTransform tile2 = secondTile.TileImageObject.GetComponent<RectTransform>();
@@ -340,22 +335,20 @@ public class Game : MonoBehaviour
         {
             for (int j = 0; j < columnsCount; j++)
             {
-                if (board[i, j].IsMatched)
-                {
-                    matches[j]++;
-                    DestroyImmediate(board[i, j].TileImageObject);
-                    board[i, j].InitializeTileImage();
-                    board[i, j].IsMatched = false;
-                }
+                if (!board[i, j].IsMatched)
+                    continue;
+                matches[j]++;
+                DestroyImmediate(board[i, j].TileImageObject);
+                board[i, j].InitializeTileImage();
             }
         }
 
-        //BringPiecesDown();
+        BringPiecesDown();
 
         selectedTile = null;
         secondTile = null;
-        canMove = true;
 
+        canMove = true;
     }
 
     // Cconvert world position to anchored local position in a RectTransform
@@ -368,37 +361,106 @@ public class Game : MonoBehaviour
 
     void BringPiecesDown()
     {
-        //TODO: Change to not make use of the animation
-        //if (!bringingTilesDown)
-        //    StartCoroutine(BringTilesDown());
-
-        matches = new int[columnsCount];
-        canMove = true;
-    }
-    IEnumerator BringTilesDown()
-    {
-        for (int column = 0; column < columnsCount; column++)
+        for(int column = 0; column < columnsCount; column++)
         {
             if (matches[column] == 0)
                 continue;
 
-            for (int row = 0; row < rowsCount - matches[column]; row++)
+            int matchedFirstIndex = -1;
+            int matchedPositionsOffest = -1;
+            for (int row = 0; row < rowsCount; row++)
             {
-                if (board[row, column].TileImageObject != null)
-                    continue;
- 
-                yield return new WaitForSeconds(0.3f);
-                //Move tiles from up to down
-                GameObject tileToMove = board[row + matches[column], column].TileImageObject;
-
-                tileToMove.transform.SetParent(board[row, column].transform);
-                tileToMove.transform.localPosition = new Vector2(0, 0);
-
-                board[row, column].InitializeTileImage();
-                board[row + matches[column], column].InitializeTileImage();
-                //TODO: Spawn tiles on the last row
+                if (board[row, column].IsMatched)
+                {
+                    //Safe check
+                    if (board[row, column].TileImageObject)
+                    {
+                        board[row, column].IsMatched = false;
+                        continue;
+                    }
+                    matchedFirstIndex = row + matches[column];
+                    matchedPositionsOffest = matches[column];
+                    StartCoroutine(AnimatePiecesDown(matchedFirstIndex, column, matchedPositionsOffest));
+                    break;
+                }
             }
+        }
 
+        //TODO: Spawn new tiles
+        matches = new int[columnsCount];
+        RestBoard();
+        canMove = true;
+    }
+    IEnumerator AnimatePiecesDown(int matchedFirstIndex, int column, int matchedPositionsOffest)
+    {
+        float elapsed = 0f;
+        Vector2[] licalPosTiles1 = new Vector2[rowsCount - matchedFirstIndex];
+        Vector2[] licalPosTiles2 = new Vector2[rowsCount - matchedFirstIndex];
+        RectTransform[] tiles = new RectTransform[rowsCount - matchedFirstIndex];
+        Transform[] parentTiles = new Transform[rowsCount - matchedFirstIndex];
+        int tilesPairsIndex = 0;
+        for (int row = matchedFirstIndex; row < rowsCount; row++)
+        {
+
+            //Get the tiles rectransform
+            RectTransform tile1 = board[row, column].TileImageObject.GetComponent<RectTransform>();
+            RectTransform tile2 = board[row - matchedPositionsOffest, column].GetComponent<RectTransform>();
+
+
+            // Get local positions relative to the animation layer
+            Vector2 localPosTile1 = WorldToLocalInRect(tile1.position, animationLayer, canvas);
+            Vector2 localPosTile2 = WorldToLocalInRect(tile2.position, animationLayer, canvas);
+
+            // Unparent and move to animation layer
+            tile1.SetParent(animationLayer, worldPositionStays: false);
+
+            // Set the new anchored positions
+            tile1.anchoredPosition = localPosTile1;
+
+            licalPosTiles1[tilesPairsIndex] = localPosTile1;
+            licalPosTiles2[tilesPairsIndex] = localPosTile2;
+            tiles[tilesPairsIndex] = tile1;
+            parentTiles[tilesPairsIndex] = tile2;
+            tilesPairsIndex++;
+
+        }
+        while (elapsed < duration)
+        {
+            float t = Mathf.Clamp01(elapsed / duration);
+            float lerpTime = Mathf.SmoothStep(0f, 1f, t);
+
+            for (int tileIndex = 0; tileIndex < licalPosTiles1.Length; tileIndex++)
+            {
+
+                tiles[tileIndex].anchoredPosition = Vector2.Lerp(licalPosTiles1[tileIndex], licalPosTiles2[tileIndex], lerpTime);
+
+                elapsed += Time.deltaTime;
+            }
+            yield return null;
+        }
+
+        for (int tileIndex = 0; tileIndex < licalPosTiles1.Length; tileIndex++)
+        {
+            // Set to final positions
+            tiles[tileIndex].anchoredPosition = licalPosTiles2[tileIndex];
+
+            // Reparent back to the new tile
+            tiles[tileIndex].SetParent(parentTiles[tileIndex]);
+            tiles[tileIndex].transform.localPosition = Vector3.zero;
+
+            // Set the tile child object
+            parentTiles[tileIndex].GetComponent<Tile>().InitializeTileImage();
+        }
+    }
+
+    void RestBoard()
+    {
+        for(int row = 0; row < rowsCount; row++)
+        {
+            for (int column = 0; column < columnsCount; column++)
+            {
+                board[row, column].IsMatched = false;
+            }
         }
     }
 }
