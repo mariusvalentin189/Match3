@@ -26,6 +26,7 @@ public class Tile : MonoBehaviour, IPointerDownHandler
         tileImage = t.GetComponent<TileImage>();
         tileImage.transform.SetParent(transform);
         tileImage.transform.localPosition = new Vector2(0, 0);
+        tileImage.transform.localScale = Vector2.one;
         xIndex = x;
         yIndex = y;
     }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-//TODO: Shuffle pieces when no matches can be done
+//TODO: Shuffle pieces when no matches can be done ; fix uneven speeds due to different distances
 public class Game : MonoBehaviour
 {
     public static Game Instance;
@@ -19,7 +19,7 @@ public class Game : MonoBehaviour
     [SerializeField] Color deselectedTileColor; //Tile color for when deselected
     [SerializeField] Tile tilePrefab; // Tile to spawn prefab
     [SerializeField] RectTransform animationLayer; // Empty GameObject under Canvas (with no layout groups)
-    [SerializeField] float duration = 0.2f; // Tiles swap or fall duration
+    [SerializeField] float duration = 0.2f; // Tiles swap duration or fall duration
     [SerializeField] float yDistanceBetweenTwoTiles = 60; //y distance in between two tiles (grid layout spacing + tiles size)
     Tile[,] board;
     Tile selectedTile;
@@ -397,7 +397,7 @@ public class Game : MonoBehaviour
                 if (!board[i, j].IsMatched)
                     continue;
                 matches[j]++;
-                DestroyImmediate(board[i, j].TileImageObject);
+                Destroy(board[i, j].TileImageObject);
                 board[i, j].InitializeTileImage();
             }
         }
@@ -439,7 +439,7 @@ public class Game : MonoBehaviour
                         if (!board[i, j].IsMatched)
                             continue;
                         matches[j]++;
-                        DestroyImmediate(board[i, j].TileImageObject);
+                        Destroy(board[i, j].TileImageObject);
                         board[i, j].InitializeTileImage();
                     }
                 }
@@ -486,7 +486,7 @@ public class Game : MonoBehaviour
                 {
                     matchedFirstIndex = row + matches[column];
                     matchedPositionsOffest = matches[column];
-                    StartCoroutine(AnimatePiecesDown(matchedFirstIndex, column, matchedPositionsOffest, duration / matches[column]));
+                    StartCoroutine(AnimatePiecesDown(matchedFirstIndex, column, matchedPositionsOffest, duration));
                     break;
                 }
             }
@@ -655,7 +655,7 @@ public class Game : MonoBehaviour
                 tileParents.Add(board[row, column]);
             }
 
-            StartCoroutine(AnimateSpawnedPieces(tilePieces, tileParents, duration / matches[column]));
+            StartCoroutine(AnimateSpawnedPieces(tilePieces, tileParents, duration));
         }
     }
     
