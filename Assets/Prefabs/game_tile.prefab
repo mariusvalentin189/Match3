@@ -58,7 +58,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbaefa55091a75d40bdeb83ba81b968b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tileObject: {fileID: 0}
 --- !u!114 &7710297502316325384
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -79,7 +78,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: -1957483353335405334, guid: 22d24bef44272004d9835dc7a6f4ca23, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
