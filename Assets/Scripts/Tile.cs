@@ -46,7 +46,7 @@ public class Tile : MonoBehaviour, IPointerDownHandler
             tileImage = transform.GetChild(0).gameObject.GetComponent<TileImage>();
         }
     }
-    public void SetTileImaget(TileImage tileImg)
+    public void SetTileImageTemp(TileImage tileImg)
     {
         tileImage = tileImg;
     }

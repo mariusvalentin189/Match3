@@ -1,28 +1,40 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
+using static UnityEngine.Rendering.DebugUI.Table;
 
-//TODO: Shuffle pieces when no matches can be done ; fix sometimes pieces not spawning
+//TODO: Level end state (moves reach 0)
 public class Game : MonoBehaviour
 {
     public static Game Instance;
 
     private void Awake()
     {
-        Application.targetFrameRate = 60;
+        Application.targetFrameRate = 60; //fixed framerate
         Instance = this;
 
     }
     [SerializeField] int rowsCount;
     [SerializeField] int columnsCount;
-    [SerializeField] GameObject[] tileObjects;
+    [SerializeField] GameObject[] tileObjects; // pieces
     [SerializeField] Color selectedTileColor; //Tile color for when selected
     [SerializeField] Color deselectedTileColor; //Tile color for when deselected
     [SerializeField] Tile tilePrefab; // Tile to spawn prefab
     [SerializeField] RectTransform animationLayer; // Empty GameObject under Canvas (with no layout groups)
     [SerializeField] float tilesSpeed = 5f; //Tiles speed
     [SerializeField] float yDistanceBetweenTwoTiles = 60; //y distance in between two tiles (grid layout spacing + tiles size)
+    [SerializeField] int baseScore; //score per each piece
+    [SerializeField] TMP_Text scoreText;
+    [SerializeField] int numberOfMoves; //max moves
+    [SerializeField] TMP_Text movesText;
+    [SerializeField] float timwWithNoMatches; //countdown timer after which the tile that can match is highlighted
+    [SerializeField] float newMatchDelayTime; //delay to do consecutive matches (new matches after tiles fall)
+    [SerializeField] float boardShuffleDelay; //delay to spawn new tiles after the old ones are removed
+    [SerializeField] float highlightedTileSwitchStateTime;
+    float currentTimer = 0;
+    int currentScore;
     bool bringingPiecesDown = false;
     int numOfRowsAnimated = 0;
     Tile[,] board;
@@ -31,14 +43,51 @@ public class Game : MonoBehaviour
     bool canMove = true;
     int[] matches;
     Canvas canvas;
+    bool sugestedTile = false;
+    Tile suggestedTileObject;
+    bool highlightedTile = false;
     void Start()
     {
         canvas = GetComponentInParent<Canvas>();
         matches = new int[columnsCount];
         board = new Tile[rowsCount, columnsCount];
         SpawnGrid();
+        UpdateScore();
+        UpdateMovesLeft();
     }
-
+    private void Update()
+    {
+        // if no tile is selected and no move/matching is being made start a counter and highlight a tile that can make a match
+        // If no tile that can do a match is found shuffle the board
+        if (selectedTile == null && canMove)
+        {
+            if (!sugestedTile)
+            {
+                suggestedTileObject = CheckPossibleMatches();
+                sugestedTile = true;
+            }
+            else if (suggestedTileObject != null)
+            {
+                if (currentTimer < timwWithNoMatches)
+                {
+                    currentTimer += Time.deltaTime;
+                }
+                else
+                {
+                    //Highlight Tile
+                    if (!highlightedTile)
+                    {
+                        StartCoroutine(HighlightTile(suggestedTileObject));
+                    }
+                }
+            }
+            else
+            {
+                //Swap board
+                StartCoroutine(RespawnPieces());
+            }
+        }
+    }
     //Spawn the grid where the pieces will be placed  
     void SpawnGrid()
     {
@@ -71,6 +120,26 @@ public class Game : MonoBehaviour
         }
 
     }
+
+    //Respawn new piecces when there are no other moves to be made
+    IEnumerator RespawnPieces()
+    {
+        canMove = false;
+        for (int i = 0; i < rowsCount; i++)
+        {
+            for (int j = 0; j < columnsCount; j++)
+            {
+                Destroy(board[i, j].TileImageObject);
+                board[i, j].InitializeTileImage();
+            }
+        }
+        yield return new WaitForSeconds(boardShuffleDelay);
+        SpawnPieces();
+        currentTimer = 0;
+        sugestedTile = false;
+        highlightedTile = false;
+        canMove = true;
+    }
     
     //Check if the tile spawned creates a match and choose another random piece
     bool CheckMatchingTilesOnInitialize(int objectType, int rowIndex, int columnIndex)
@@ -97,17 +166,9 @@ public class Game : MonoBehaviour
     {
         if (!canMove) return;
 
-        //Temp (No tiles falling after matching for now)
-        if (tile.TileImageObject == null)
-        {
-            //Unselect if previously selected
-            if (selectedTile)
-            {
-                selectedTile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
-                selectedTile = null;
-            }
-            return;
-        }
+        sugestedTile = false;
+
+        currentTimer = 0;
 
         if (selectedTile == null)
         {
@@ -154,8 +215,8 @@ public class Game : MonoBehaviour
         }
     }
 
-    //Check the newly spawned pieces after creating a match
-    bool CheckMatchingTilesTilesSpawn(Tile tile)
+    //Check the newly spawned pieces after new tiles spawn
+    bool CheckMatchingTilesAfterTilesSpawn(Tile tile)
     {
         int objectType = tile.TileImageId;
         int rowIndex = tile.XIndex;
@@ -312,16 +373,68 @@ public class Game : MonoBehaviour
         }
         return found;
     }
-   
+
+    //Check if any match is found after making a move (creating a swap and checking if any new tiles swap)
+    //Used to suggest a nrea match in case the player does not find any
+    bool CheckNewMatchesAfterMatching(Tile tile)
+    {
+        int objectType = tile.TileImageId;
+        int rowIndex = tile.XIndex;
+        int columnIndex = tile.YIndex;
+        if (rowIndex >= 2)
+        {
+            if (board[rowIndex - 1, columnIndex].TileImageId == objectType && board[rowIndex - 2, columnIndex].TileImageId == objectType)
+            {
+                return true;
+            }
+        }
+        if (rowIndex <= rowsCount - 3)
+        {
+            if (board[rowIndex + 1, columnIndex].TileImageId == objectType && board[rowIndex + 2, columnIndex].TileImageId == objectType)
+            {
+                return true;
+            }
+        }
+        if (columnIndex >= 2)
+        {
+            if (board[rowIndex, columnIndex - 1].TileImageId == objectType && board[rowIndex, columnIndex - 2].TileImageId == objectType)
+            {
+                return true;
+            }
+        }
+        if (columnIndex <= columnsCount - 3)
+        {
+            if (board[rowIndex, columnIndex + 1].TileImageId == objectType && board[rowIndex, columnIndex + 2].TileImageId == objectType)
+            {
+                return true;
+            }
+        }
+        //Column three match case but in between two tiles
+        if (rowIndex >= 1 && rowIndex <= rowsCount - 2)
+        {
+            if (board[rowIndex - 1, columnIndex].TileImageId == objectType && board[rowIndex + 1, columnIndex].TileImageId == objectType)
+            {
+                return true;
+            }
+        }
+        //Row three match case but in between two tiles
+        if (columnIndex >= 1 && columnIndex <= columnsCount - 2)
+        {
+            if (board[rowIndex, columnIndex - 1].TileImageId == objectType && board[rowIndex, columnIndex + 1].TileImageId == objectType)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     //Check if the two pieces selected can match
     bool CheckSelectedTilesMatching()
     {
         bool found = false;
 
         //Temporary swap tiles colors
-        TileImage tempImg = selectedTile.TileImageObject.GetComponent<TileImage>();
-        selectedTile.SetTileImaget(secondTile.TileImageObject.GetComponent<TileImage>());
-        secondTile.SetTileImaget(tempImg);
+        TemporarySwapTiles(selectedTile, secondTile);
 
         if (CheckMatchingTilesBeforeSwap(selectedTile))
         {
@@ -334,9 +447,7 @@ public class Game : MonoBehaviour
         }
 
         //Swap tiles back
-        tempImg = selectedTile.TileImageObject.GetComponent<TileImage>();
-        selectedTile.SetTileImaget(secondTile.TileImageObject.GetComponent<TileImage>());
-        secondTile.SetTileImaget(tempImg);
+        TemporarySwapTiles(selectedTile, secondTile);
         return found;
     }
 
@@ -373,6 +484,9 @@ public class Game : MonoBehaviour
             yield return null;
         }
 
+        numberOfMoves--;
+        UpdateMovesLeft();
+
         // Snap to final positions
         tile1.anchoredPosition = localPosTile2;
         tile2.anchoredPosition = localPosTile1;
@@ -395,12 +509,15 @@ public class Game : MonoBehaviour
                 if (!board[i, j].IsMatched)
                     continue;
                 matches[j]++;
+                currentScore += baseScore;
                 Destroy(board[i, j].TileImageObject);
                 board[i, j].InitializeTileImage();
             }
         }
 
         yield return null;
+
+        UpdateScore();
 
         BringPiecesDown();
 
@@ -418,21 +535,18 @@ public class Game : MonoBehaviour
         }
 
         bool newMatchesFound;
-        int steps = 0;
 
         do
         {
-            yield return new WaitForSeconds(0.5f);
-            steps++;
+            yield return new WaitForSeconds(newMatchDelayTime);
             newMatchesFound = false;
             for (int i = 0; i < rowsCount; i++)
             {
                 for (int j = 0; j < columnsCount; j++)
                 {
-                    if (CheckMatchingTilesTilesSpawn(board[i, j]))
+                    if (CheckMatchingTilesAfterTilesSpawn(board[i, j]))
                     {
                         newMatchesFound = true;
-                        board[i, j].IsMatched = true;
                     }
                 }
 
@@ -447,6 +561,7 @@ public class Game : MonoBehaviour
                         if (!board[i, j].IsMatched)
                             continue;
                         matches[j]++;
+                        currentScore += baseScore;
                         Destroy(board[i, j].TileImageObject);
                         board[i, j].InitializeTileImage();
                     }
@@ -454,7 +569,10 @@ public class Game : MonoBehaviour
 
                 yield return null;
 
+                UpdateScore();
+
                 BringPiecesDown();
+
                 while (bringingPiecesDown)
                 {
                     if (numOfRowsAnimated == 0)
@@ -466,13 +584,8 @@ public class Game : MonoBehaviour
                     yield return null;
                 }
             }
-            if (steps >= 200)
-            {
-                print("Infinite loop detected");
-                break;
-            }
+            else canMove = true;
         } while (newMatchesFound);
-        canMove = true;
     }
 
     // Cconvert world position to anchored local position in a RectTransform
@@ -496,7 +609,8 @@ public class Game : MonoBehaviour
             int matchedPositionsOffest = -1;
             bool foundFirstMatchedPiece = false;
             int matchesUntilPieceFound = 0;
-            for (int row = 0; row < rowsCount; row++)
+            int row = 0;
+            while (row < rowsCount)
             {
                 int lastIndex = 0;
                 if (!foundFirstMatchedPiece)
@@ -505,6 +619,9 @@ public class Game : MonoBehaviour
                     {
                         matchesUntilPieceFound++;
                         foundFirstMatchedPiece = true;
+
+                        //If all the tiles on top rows are matched, there are no tiles to fall down
+                        //New tiles will be spawned instead
                         if (row == rowsCount - 1)
                         {
                             foundFirstMatchedPiece = false;
@@ -526,15 +643,15 @@ public class Game : MonoBehaviour
                             StartCoroutine(AnimatePiecesDown(matchedFirstIndex, lastIndex, column, matchedPositionsOffest));
                         }
                     }
+                    else row++;
                 }
                 else
                 {
-                    if ((board[row, column].IsMatched && !board[row - 1, column].IsMatched))
+                    if (board[row, column].IsMatched && !board[row - 1, column].IsMatched)
                     {
                         lastIndex = row;
                         foundFirstMatchedPiece = false;
                         matchedPositionsOffest = matchesUntilPieceFound;
-                        matchesUntilPieceFound = 0;
                         bringingPiecesDown = true;
                         StartCoroutine(AnimatePiecesDown(matchedFirstIndex, lastIndex, column, matchedPositionsOffest));
                     }
@@ -547,6 +664,7 @@ public class Game : MonoBehaviour
                         bringingPiecesDown = true;
                         StartCoroutine(AnimatePiecesDown(matchedFirstIndex, lastIndex, column, matchedPositionsOffest));
                     }
+                    else row++;
                 }
             }
         }
@@ -714,5 +832,96 @@ public class Game : MonoBehaviour
                 board[row, column].IsMatched = false;
             }
         }
+    }
+
+    //Update the score text
+    void UpdateScore()
+    {
+        scoreText.text = "SCORE: " + currentScore.ToString();
+    }
+
+    //Update the moves left text
+    void UpdateMovesLeft()
+    {
+        movesText.text = "MOVES LEFT: " + numberOfMoves.ToString();
+    }
+
+    //Check if any possible match can be made and return the tile that can do the match
+    Tile CheckPossibleMatches()
+    {
+        var directions = new (int dr, int dc)[] { (0, 1), (1, 0) };
+
+        for (int row = 0; row < rowsCount; row++)
+        {
+            for (int column = 0; column < columnsCount; column++)
+            {
+                foreach (var (dr, dc) in directions)
+                {
+                    int newRow = row + dr;
+                    int newCol = column + dc;
+
+                    if (newRow >= rowsCount || newCol >= columnsCount)
+                        continue;
+
+                    TemporarySwapTiles(board[row, column], board[newRow, newCol]);
+
+                    if (CheckNewMatchesAfterMatching(board[row, column]))
+                    {
+                        //Swap tiles back
+                        TemporarySwapTiles(board[row, column], board[newRow, newCol]);
+                        return board[newRow, newCol];
+                    }
+                    if (CheckNewMatchesAfterMatching(board[newRow, newCol]))
+                    {
+                        //Swap tiles back
+                        TemporarySwapTiles(board[row, column], board[newRow, newCol]);
+                        return board[row, column];
+                    }
+
+                    //Swap tiles back
+                    TemporarySwapTiles(board[row, column], board[newRow, newCol]);
+                }
+            }
+        }
+        return null;
+    }
+
+    //Highlight the tile that can do a match
+    IEnumerator HighlightTile (Tile tile)
+    {
+        highlightedTile = true;
+        bool selected = false;
+        while(selectedTile == null)
+        {
+            selected = !selected;
+            if (selected)
+            {
+                tile.GetComponent<UnityEngine.UI.Image>().color = selectedTileColor;
+            }
+            else
+            {
+                tile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
+            }
+            if (selectedTile == null)
+            {
+                yield return new WaitForSeconds(highlightedTileSwitchStateTime);
+            }
+        }
+        if (tile != selectedTile)
+        {
+            tile.GetComponent<UnityEngine.UI.Image>().color = deselectedTileColor;
+        }
+        sugestedTile = false;
+        highlightedTile = false;
+        currentTimer = 0;
+
+    }
+
+    //Temporary swap tiles pieces
+    void TemporarySwapTiles(Tile firstTile, Tile secondTile)
+    {
+        TileImage tempImg = firstTile.TileImageObject.GetComponent<TileImage>();
+        firstTile.SetTileImageTemp(secondTile.TileImageObject.GetComponent<TileImage>());
+        secondTile.SetTileImageTemp(tempImg);
     }
 }

@@ -122,12 +122,24 @@ MonoBehaviour:
   - {fileID: 3551469511505594320, guid: e71f715834812ad499484fb61a0b8db6, type: 3}
   - {fileID: 3551469511505594320, guid: 8092f3c4c47764549b2cf3a3a624fe8d, type: 3}
   - {fileID: 3551469511505594320, guid: 9c28d5012e94659449c223d28598c37b, type: 3}
+  - {fileID: 3551469511505594320, guid: 4e21b37ca5740c44a8f8ac1b3068c1ea, type: 3}
+  - {fileID: 3551469511505594320, guid: 36480ce07a61f4343bb9d79d1d8e3b8c, type: 3}
+  - {fileID: 3551469511505594320, guid: 7d12eb6c164f585439cc0f0699eef1f2, type: 3}
+  - {fileID: 3551469511505594320, guid: b6b2bdb53c4c9f04cb4fd1b1cc123a0a, type: 3}
   selectedTileColor: {r: 0.41509432, g: 0.41509432, b: 0.41509432, a: 0.7882353}
   deselectedTileColor: {r: 0.764151, g: 0.764151, b: 0.764151, a: 1}
   tilePrefab: {fileID: 6143428078481565841, guid: d008d8ea86091d84e8bb2a945e5fe125, type: 3}
   animationLayer: {fileID: 7007091949948663851}
-  tilesSpeed: 500
+  tilesSpeed: 700
   yDistanceBetweenTwoTiles: 107
+  baseScore: 7
+  scoreText: {fileID: 7263879925265373931}
+  numberOfMoves: 20
+  movesText: {fileID: 7089306646422777788}
+  timwWithNoMatches: 2
+  newMatchDelayTime: 0.2
+  boardShuffleDelay: 0.1
+  highlightedTileSwitchStateTime: 0.5
 --- !u!1 &2938118309682588084
 GameObject:
   m_ObjectHideFlags: 0
