@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using static UnityEngine.Rendering.DebugUI.Table;
 
 //TODO: Level end state (moves reach 0)
 public class Game : MonoBehaviour
@@ -12,7 +11,6 @@ public class Game : MonoBehaviour
 
     private void Awake()
     {
-        Application.targetFrameRate = 60; //fixed framerate
         Instance = this;
 
     }
@@ -584,7 +582,16 @@ public class Game : MonoBehaviour
                     yield return null;
                 }
             }
-            else canMove = true;
+            else
+            {
+                canMove = true;
+
+                //Check if all the moves were used and end the level
+                if (numberOfMoves == 0)
+                {
+                    PauseMenu.Instance.FinishLevel(currentScore);
+                }
+            }
         } while (newMatchesFound);
     }
 
@@ -838,12 +845,13 @@ public class Game : MonoBehaviour
     void UpdateScore()
     {
         scoreText.text = "SCORE: " + currentScore.ToString();
+
     }
 
     //Update the moves left text
     void UpdateMovesLeft()
     {
-        movesText.text = "MOVES LEFT: " + numberOfMoves.ToString();
+        movesText.text = "MOVES LEFT: " + numberOfMoves.ToString(); 
     }
 
     //Check if any possible match can be made and return the tile that can do the match
