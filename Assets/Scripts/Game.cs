@@ -4,7 +4,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 
-//TODO: Level end state (moves reach 0)
+
 public class Game : MonoBehaviour
 {
     public static Game Instance;
@@ -31,6 +31,11 @@ public class Game : MonoBehaviour
     [SerializeField] float newMatchDelayTime; //delay to do consecutive matches (new matches after tiles fall)
     [SerializeField] float boardShuffleDelay; //delay to spawn new tiles after the old ones are removed
     [SerializeField] float highlightedTileSwitchStateTime;
+
+    [Header("Scores")]
+    [SerializeField] int oneStarScore;
+    [SerializeField] int twoStarScore;
+    [SerializeField] int threeStarScore;
     float currentTimer = 0;
     int currentScore;
     bool bringingPiecesDown = false;

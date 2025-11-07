@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement;
 public class PauseMenu : MonoBehaviour
 {
     public static PauseMenu Instance;
@@ -11,6 +12,7 @@ public class PauseMenu : MonoBehaviour
 
     }
 
+    [SerializeField] int levelID;
 
     public bool IsPaused 
     {
@@ -31,22 +33,37 @@ public class PauseMenu : MonoBehaviour
     [SerializeField] GameObject levelFinishedWindow;
     [SerializeField] TMP_Text scoreText;
     bool isPaused;
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 
     public void FinishLevel(int score)
     {
         IsPaused = true;
         levelFinishedWindow.SetActive(true);
-        scoreText.text = $"FINAL SCORE: \n {score.ToString()}";
+        int previousScore = 0;
+        previousScore = PlayerPrefs.GetInt("LevelScore" + levelID);
+        if (previousScore < score)
+        {
+            scoreText.text = $"FINAL SCORE: \n{score.ToString()} \nHIGH SCORE!";
+            PlayerPrefs.SetInt("LevelScore" + levelID, score);
+        }
+        else scoreText.text = $"FINAL SCORE: \n{score.ToString()}";
 
+        PlayerPrefs.SetInt("LevelCompleted" + levelID, 1);
+
+    }
+
+    public void RestartLevel()
+    {
+        IsPaused=false;
+        SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
+    }
+    public void NextLevel()
+    {
+        IsPaused = false;
+        SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex + 1);
+    }
+    public void MainMenu()
+    {
+        IsPaused = false;
+        SceneManager.LoadSceneAsync(0); //Menu scene always 0
     }
 }
