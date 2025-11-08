@@ -32,10 +32,6 @@ public class Game : MonoBehaviour
     [SerializeField] float boardShuffleDelay; //delay to spawn new tiles after the old ones are removed
     [SerializeField] float highlightedTileSwitchStateTime;
 
-    [Header("Scores")]
-    [SerializeField] int oneStarScore;
-    [SerializeField] int twoStarScore;
-    [SerializeField] int threeStarScore;
     float currentTimer = 0;
     int currentScore;
     bool bringingPiecesDown = false;

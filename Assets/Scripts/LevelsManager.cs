@@ -24,11 +24,15 @@ public class LevelsManager : MonoBehaviour
             if (completedState == 1)
             {
                 int score = PlayerPrefs.GetInt("LevelScore" + i);
-                levelsButtons[i].UnlockLevel(score);
+
+                int starsCount = 0;
+                starsCount = PlayerPrefs.GetInt("LevelStars" + i);
+
+                levelsButtons[i].UnlockLevel(score, starsCount);
             }
             else
             {
-                levelsButtons[i].UnlockLevel(0);
+                levelsButtons[i].UnlockLevel(0, 0);
                 break;
             }
         }

@@ -32,10 +32,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 7200349993531583392}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 180.26224, y: -75.72101}
-  m_SizeDelta: {x: 100, y: 100}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2489175190916797192
 CanvasRenderer:
@@ -133,8 +133,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 758ee54687fd707458285b6734a94793, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PauseMenu
+  levelID: 0
   levelFinishedWindow: {fileID: 1818178746329829286}
   scoreText: {fileID: 1657363547012842467}
+  starsImages:
+  - {fileID: 7465012045399892850}
+  - {fileID: 5095131757558206155}
+  - {fileID: 6224087282081741614}
+  starSprite: {fileID: -275653890333973913, guid: fe2575b5829b40a4e99d421c3cac5d63, type: 3}
+  oneStarScore: 300
+  twoStarScore: 380
+  threeStarScore: 440
 --- !u!1 &634317323067984527
 GameObject:
   m_ObjectHideFlags: 0
@@ -171,8 +180,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 760.123, y: 1080}
+  m_AnchoredPosition: {x: 0, y: 103.43811}
+  m_SizeDelta: {x: 660.8222, y: 873.1238}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!222 &8012286825414606705
 CanvasRenderer:
@@ -248,19 +257,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85e81c98dae7bad438d8f1b43a4854c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rowsCount: 10
-  columnsCount: 7
+  rowsCount: 8
+  columnsCount: 6
   tileObjects:
   - {fileID: 2842448883164698036, guid: 8adbac25c3d4e9f43bfadef76737309b, type: 3}
   - {fileID: 643782957149474261, guid: 76a176aab59a52543bbc18b36d408b74, type: 3}
   - {fileID: 3551469511505594320, guid: 85a668776cc3e564293cea2d9f4af3bb, type: 3}
   - {fileID: 3551469511505594320, guid: e71f715834812ad499484fb61a0b8db6, type: 3}
-  - {fileID: 3551469511505594320, guid: 8092f3c4c47764549b2cf3a3a624fe8d, type: 3}
-  - {fileID: 3551469511505594320, guid: 9c28d5012e94659449c223d28598c37b, type: 3}
-  - {fileID: 3551469511505594320, guid: 4e21b37ca5740c44a8f8ac1b3068c1ea, type: 3}
-  - {fileID: 3551469511505594320, guid: 36480ce07a61f4343bb9d79d1d8e3b8c, type: 3}
-  - {fileID: 3551469511505594320, guid: 7d12eb6c164f585439cc0f0699eef1f2, type: 3}
-  - {fileID: 3551469511505594320, guid: b6b2bdb53c4c9f04cb4fd1b1cc123a0a, type: 3}
   selectedTileColor: {r: 0.41509432, g: 0.41509432, b: 0.41509432, a: 0.7882353}
   deselectedTileColor: {r: 0.764151, g: 0.764151, b: 0.764151, a: 1}
   tilePrefab: {fileID: 6143428078481565841, guid: d008d8ea86091d84e8bb2a945e5fe125, type: 3}
@@ -275,9 +278,6 @@ MonoBehaviour:
   newMatchDelayTime: 0.2
   boardShuffleDelay: 0.1
   highlightedTileSwitchStateTime: 0.5
-  oneStarScore: 0
-  twoStarScore: 0
-  threeStarScore: 0
 --- !u!1 &770025346897007445
 GameObject:
   m_ObjectHideFlags: 0
@@ -413,10 +413,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 7200349993531583392}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 300.26224, y: -75.72101}
-  m_SizeDelta: {x: 100, y: 100}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &64859778744090328
 CanvasRenderer:
@@ -1216,10 +1216,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 7200349993531583392}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 60.262238, y: -75.72101}
-  m_SizeDelta: {x: 100, y: 100}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3095430473035146718
 CanvasRenderer:
@@ -1637,8 +1637,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 101.2}
-  m_SizeDelta: {x: 325.705, y: 85.774}
+  m_AnchoredPosition: {x: 0, y: 85.9}
+  m_SizeDelta: {x: 325.705, y: 155.9372}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6141325906441827569
 CanvasRenderer:
@@ -1668,7 +1668,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'FINAL SCORE: \n 1234'
+  m_text: 'FINAL SCORE: \n 1234\nHIGH SCORE!'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 4f71bb24af56fe14ea54585a9f23e534, type: 2}
   m_sharedMaterial: {fileID: -4395681470577319917, guid: 4f71bb24af56fe14ea54585a9f23e534, type: 2}
@@ -1703,7 +1703,7 @@ MonoBehaviour:
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 512
+  m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0

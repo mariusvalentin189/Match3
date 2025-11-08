@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 public class PauseMenu : MonoBehaviour
 {
     public static PauseMenu Instance;
@@ -11,9 +12,6 @@ public class PauseMenu : MonoBehaviour
         Instance = this;
 
     }
-
-    [SerializeField] int levelID;
-
     public bool IsPaused 
     {
         get { return isPaused; } 
@@ -30,8 +28,17 @@ public class PauseMenu : MonoBehaviour
             }
         } 
     }
+    [SerializeField] int levelID;
     [SerializeField] GameObject levelFinishedWindow;
     [SerializeField] TMP_Text scoreText;
+    [SerializeField] Image[] starsImages;
+    [SerializeField] Sprite starSprite;
+
+    [Header("Scores")]
+    [SerializeField] int oneStarScore;
+    [SerializeField] int twoStarScore;
+    [SerializeField] int threeStarScore;
+
     bool isPaused;
 
     public void FinishLevel(int score)
@@ -44,6 +51,28 @@ public class PauseMenu : MonoBehaviour
         {
             scoreText.text = $"FINAL SCORE: \n{score.ToString()} \nHIGH SCORE!";
             PlayerPrefs.SetInt("LevelScore" + levelID, score);
+
+            //Save stars only for the highest score
+            int stars = 0;
+            if (score >= oneStarScore)
+            {
+                starsImages[0].sprite = starSprite;
+                stars = 1;
+                if (score >= twoStarScore)
+                {
+                    stars = 2;
+                    starsImages[1].sprite = starSprite;
+
+                    if (score >= threeStarScore)
+                    {
+                        stars = 3;
+                        starsImages[2].sprite = starSprite;
+                    }
+                }
+
+                PlayerPrefs.SetInt("LevelStars" + levelID, stars);
+            }
+
         }
         else scoreText.text = $"FINAL SCORE: \n{score.ToString()}";
 
