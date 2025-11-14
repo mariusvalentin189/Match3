@@ -28,11 +28,31 @@ public class PauseMenu : MonoBehaviour
             }
         } 
     }
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (!settingsPanel.activeSelf)
+            {
+                IsPaused = !isPaused;
+                pausePanel.SetActive(!pausePanel.activeSelf);
+            }
+            else
+            {
+                SettingsButtons.Instance.Back();
+                settingsPanel.SetActive(false);
+                pausePanel.SetActive(true);
+            }
+        }
+    }
     [SerializeField] int levelID;
     [SerializeField] GameObject levelFinishedWindow;
     [SerializeField] TMP_Text scoreText;
     [SerializeField] Image[] starsImages;
     [SerializeField] Sprite starSprite;
+    [Header("Panels")]
+    [SerializeField] GameObject pausePanel;
+    [SerializeField] GameObject settingsPanel;
 
     [Header("Scores")]
     [SerializeField] int oneStarScore;
@@ -94,5 +114,14 @@ public class PauseMenu : MonoBehaviour
     {
         IsPaused = false;
         SceneManager.LoadSceneAsync(0); //Menu scene always 0
+    }
+    public void Settings()
+    {
+        settingsPanel.SetActive(true);
+        pausePanel.SetActive(false);
+    }
+    public void QuitGame()
+    {
+        Application.Quit();
     }
 }
