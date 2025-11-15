@@ -20,13 +20,13 @@ public class LevelsManager : MonoBehaviour
         for (int i = 0; i < levelsButtons.Length; i++)
         {
             int completedState = 0;
-            completedState = PlayerPrefs.GetInt("LevelCompleted" + i);
+            completedState = PlayerPrefs.GetInt("LevelCompleted" + (i + 1));
             if (completedState == 1)
             {
-                int score = PlayerPrefs.GetInt("LevelScore" + i);
+                int score = PlayerPrefs.GetInt("LevelScore" + (i + 1));
 
                 int starsCount = 0;
-                starsCount = PlayerPrefs.GetInt("LevelStars" + i);
+                starsCount = PlayerPrefs.GetInt("LevelStars" + (i + 1));
 
                 levelsButtons[i].UnlockLevel(score, starsCount);
             }
