@@ -14,6 +14,8 @@ public class AudioManager : MonoBehaviour
     public AudioSource music;
     [Header("GameSounds")]
     [SerializeField] AudioClip swapPieces;
+    [SerializeField] AudioClip matchPieces;
+    [SerializeField] AudioClip completedLevel;
 
     [Header("Game Music")]
     [SerializeField] AudioClip gameMusic;
@@ -33,9 +35,17 @@ public class AudioManager : MonoBehaviour
     {
         sound.PlayOneShot(swapPieces);
     }
+    public void PlayMatchSound()
+    {
+        sound.PlayOneShot(matchPieces);
+    }
     public void PlayButtonClickSound()
     {
         sound.PlayOneShot(buttonClick);
+    }
+    public void PlayCompletedLevelSound()
+    {
+        sound.PlayOneShot(completedLevel);
     }
 
 

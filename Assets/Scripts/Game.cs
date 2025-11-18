@@ -476,6 +476,7 @@ public class Game : MonoBehaviour
         tile1.anchoredPosition = localPosTile1;
         tile2.anchoredPosition = localPosTile2;
 
+        AudioManager.instance.PlaySwapSound();
         while (Vector2.Distance(tile1.anchoredPosition, localPosTile2) > 0.01f)
         {
             tile1.anchoredPosition = Vector2.MoveTowards(tile1.anchoredPosition, localPosTile2, tilesSpeed * Time.deltaTime);
@@ -513,7 +514,7 @@ public class Game : MonoBehaviour
                 board[i, j].InitializeTileImage();
             }
         }
-
+        AudioManager.instance.PlayMatchSound();
         yield return null;
 
         UpdateScore();
@@ -565,7 +566,7 @@ public class Game : MonoBehaviour
                         board[i, j].InitializeTileImage();
                     }
                 }
-
+                AudioManager.instance.PlayMatchSound();
                 yield return null;
 
                 UpdateScore();
@@ -590,6 +591,7 @@ public class Game : MonoBehaviour
                 //Check if all the moves were used and end the level
                 if (numberOfMoves == 0)
                 {
+                    AudioManager.instance.PlayCompletedLevelSound();
                     PauseMenu.Instance.FinishLevel(currentScore);
                 }
             }

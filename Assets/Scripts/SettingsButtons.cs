@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -28,11 +29,14 @@ public class SettingsButtons : MonoBehaviour
         SettingsManager.LoadSettings();
         soundVolumeSlider.value = SettingsManager.soundVolume;
         musicVolumeSlider.value = SettingsManager.musicVolume;
-        resolutions = Screen.resolutions;
+        var resolutions = Screen.resolutions
+        .GroupBy(r => new { r.width, r.height })
+        .Select(g => g.First())
+        .ToList();
         resolutionDropdown.ClearOptions();
         List<string> resolutionsList = new List<string>();
         int currentResolutionIndex = 0;
-        for (int i = 0; i < resolutions.Length; i++)
+        for (int i = 0; i < resolutions.Count; i++)
         {
             if (resolutions[i].width == SettingsManager.screenWidth && resolutions[i].height == SettingsManager.screenHeight)
                 currentResolutionIndex = i;
