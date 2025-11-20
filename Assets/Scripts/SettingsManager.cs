@@ -48,15 +48,16 @@ public class SettingsManager
         else PlayerPrefs.SetInt("FullScreen", 1);
         PlayerPrefs.SetInt("Width", screenWidth);
         PlayerPrefs.SetInt("Height", screenHeight);
+
+        PlayerPrefs.Save();
     }
-    public static void SetResolution(int index)
+    public static void SetResolution(Resolution res)
     {
-        if (Screen.currentResolution.width != Screen.resolutions[index].width || Screen.currentResolution.height != Screen.resolutions[index].height)
-        {
-            Screen.SetResolution(Screen.resolutions[index].width, Screen.resolutions[index].height, fullScreen);
-            screenWidth = Screen.resolutions[index].width;
-            screenHeight = Screen.resolutions[index].height;
-        }
+        int width = res.width;
+        int height = res.height;
+        Screen.SetResolution(width, height, fullScreen);
+        screenWidth = width;
+        screenHeight = height;
     }
     public static void SetFullScreen(bool full)
     {

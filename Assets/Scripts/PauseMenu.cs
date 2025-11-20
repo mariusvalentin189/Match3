@@ -124,4 +124,9 @@ public class PauseMenu : MonoBehaviour
     {
         Application.Quit();
     }
+    public void ResumeGame()
+    {
+        IsPaused = false;
+        pausePanel.SetActive(false);
+    }
 }

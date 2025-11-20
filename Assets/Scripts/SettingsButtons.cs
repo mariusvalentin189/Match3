@@ -2,8 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class SettingsButtons : MonoBehaviour
@@ -19,8 +17,7 @@ public class SettingsButtons : MonoBehaviour
     [Header("Resolution")]
     [SerializeField] TMP_Dropdown resolutionDropdown;
     [SerializeField] Toggle fullScreenToggle;
-    Resolution[] resolutions;
-    int selectedResolutionIndex;
+    List<Resolution> resolutions = new List<Resolution>();
     float soundVolume, musicVolume;
     bool fullScreen;
     int savedIndex;
@@ -29,7 +26,7 @@ public class SettingsButtons : MonoBehaviour
         SettingsManager.LoadSettings();
         soundVolumeSlider.value = SettingsManager.soundVolume;
         musicVolumeSlider.value = SettingsManager.musicVolume;
-        var resolutions = Screen.resolutions
+        resolutions = Screen.resolutions
         .GroupBy(r => new { r.width, r.height })
         .Select(g => g.First())
         .ToList();
@@ -70,9 +67,8 @@ public class SettingsButtons : MonoBehaviour
     }
     public void SetResolution(int index)
     {
-        selectedResolutionIndex = index;
-        savedIndex = selectedResolutionIndex;
-        SettingsManager.SetResolution(selectedResolutionIndex);
+        savedIndex = index;
+        SettingsManager.SetResolution(resolutions[savedIndex]);
     }
     public void Back()
     {
